@@ -23,8 +23,8 @@
 %%------------------------------------------------------------------------
 
 outdir = '../lib';
-debug = false;
-UseInterleavedComplexAPI = false;
+debug = true;
+UseInterleavedComplexAPI = true;
 compiler_flags = '-std=c++17';
 useCompilerFlags = false;
 
@@ -49,5 +49,5 @@ fprintf(1, 'Compiler Input: %s\n', strcat(interleaveOpts, " ", debugFlag, " ", c
            'LAS_IO.cpp', " ", 'LasReader.cpp', " ",  'VariableLengthRecords.cpp', " ", 'LASAlloc.cpp', " ",  '-outdir', " ",  outdir));
 
 % Compile File
-mex(interleaveOpts, combinedFlag, 'readLasFile.cpp', 'LAS_IO.cpp',...
+mex(interleaveOpts, debugFlag, combinedFlag, 'readLasFile.cpp', 'LAS_IO.cpp',...
     'LasReader.cpp', 'VariableLengthRecords.cpp', 'LASAlloc.cpp', '-outdir', outdir)

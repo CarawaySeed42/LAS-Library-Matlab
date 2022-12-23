@@ -27,25 +27,25 @@ returnType = 'matrix';
 %% Input checks
 if nargin == 2
     if ~any(strcmp(optsReturnType, supportedReturnTypes))
-        error('unpack_bit_fields: Selected Return Type is not supported')
+        error('Selected Return Type is not supported')
     end
     returnType = optsReturnType;
 end
 
 if ~isstruct(lasStruct)
-    error('unpack_bit_fields: First argument has to be a LAS Struct')
+    error('First argument has to be a LAS Struct')
 end
 
 if ~isfield(lasStruct.header, 'version_minor')
-    error('unpack_bit_fields: Input struct is missing the field las.header.version_minor') 
+    error('Input struct is missing the field las.header.version_minor') 
 end
 
 if lasStruct.header.version_minor > 4 
-   error('unpack_bit_fields: LAS Minor Versions bigger than 4 not implemented') 
+   error('LAS Minor Versions bigger than 4 not implemented') 
 end
 
 if lasStruct.header.version_minor < 0
-   error('unpack_bit_fields: LAS Minor Version is smaller than zero') 
+   error('LAS Minor Version is smaller than zero') 
 end
 
 %% Differentiate between LAS Minor Versions and extract bit fields
