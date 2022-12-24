@@ -30,7 +30,7 @@ useCompilerFlags = false;
 
 %% -----------------------------------------------------------------------
 
-debugFlag = "";
+debugFlag = '';
 if debug
     debugFlag = '-g';
 end
@@ -45,8 +45,8 @@ if useCompilerFlags
     combinedFlag = ['COMPFLAGS=''$COMPFLAGS ' compiler_flags ''''];
 end
 
-fprintf(1, 'Compiler Input: %s\n', strcat(interleaveOpts, " ", debugFlag, " ", combinedFlag, " ", 'readLasFile.cpp', " ",...
-           'LAS_IO.cpp', " ", 'LasReader.cpp', " ",  'VariableLengthRecords.cpp', " ", 'LASAlloc.cpp', " ",  '-outdir', " ",  outdir));
+fprintf(1, 'Compiler Input: %s\n', [interleaveOpts, ' ', debugFlag, ' ', combinedFlag, ' ', 'readLasFile.cpp', ' ',...
+           'LAS_IO.cpp', ' ', 'LasReader.cpp', ' ',  'VariableLengthRecords.cpp', ' ', 'LASAlloc.cpp', ' ',  '-outdir', ' ',  outdir]);
 
 % Compile File
 mex(interleaveOpts, debugFlag, combinedFlag, 'readLasFile.cpp', 'LAS_IO.cpp',...
