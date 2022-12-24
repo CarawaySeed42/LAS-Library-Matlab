@@ -1,6 +1,6 @@
-function bitfields = unpack_bit_fields(lasStruct, optsReturnType)
-%[bitfields] = unpack_bit_fields(lasStruct, optsReturnType)
-%   Unpacks LAS fields 'bits' and if applicable 'bits2'
+function bitfields = decode_bit_fields(lasStruct, optsReturnType)
+%[bitfields] = decode_bit_fields(lasStruct, optsReturnType)
+%   Decode LAS fields 'bits' and if applicable 'bits2'
 %   The resulting data depends on if the LAS Minor Version is four or lower
 %   than four (LAS 1.0 - LAS 1.3 or LAS 1.4)
 %
@@ -21,6 +21,23 @@ function bitfields = unpack_bit_fields(lasStruct, optsReturnType)
 %   m:  Number of bitfields. Is 4 if LAS Version Minor is smaller than four
 %                            Is 6 if LAS Minor Version is exactly four
 %
+% Bit fields according to LAS 1.4 Revision 15 specification
+%
+% LAS 1.0 - 1.3:
+%   Return Number 3 bits (bits 0-2)
+%   Number of Returns (Given Pulse) 3 bits (bits 3-5)
+%   Scan Direction Flag 1 bit (bit 6)
+%   Edge of Flight Line 1 bit (bit 7)
+%
+% LAS 1.4:
+%   Return Number 4 bits (bits 0-3)
+%   Number of Returns (Given Pulse) 4 bits (bits 4-7)
+%   Classification Flags 4 bits (bits 0-3
+%   Scanner Channel 2 bits (bits 4-5)
+%   Scan Direction Flag 1 bit (bit 6)
+%   Edge of Flight Line 1 bit (bit 7) 
+
+
 supportedReturnTypes = {'matrix', 'struct'};
 returnType = 'matrix';
 
