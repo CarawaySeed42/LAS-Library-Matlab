@@ -23,7 +23,7 @@
 %%------------------------------------------------------------------------
 
 outdir = '../lib';
-debug = true;
+debug = false;
 UseInterleavedComplexAPI = true;
 compiler_flags = '-std=c++17';
 useCompilerFlags = false;
