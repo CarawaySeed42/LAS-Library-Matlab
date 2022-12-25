@@ -93,9 +93,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 	// Get Path from input and open file
 	char* filePath = mxArrayToString(prhs[0]);
 
-	//std::ios_base::sync_with_stdio(false);
+	std::ios_base::sync_with_stdio(false);
 	std::ifstream lasBin;	
-	//lasBin.rdbuf()->pubsetbuf(0, 0);						
+	lasBin.rdbuf()->pubsetbuf(0, 0);						
 	lasBin.open(filePath, std::ios::in | std::ios::binary);	// Open File
 	mxFree(filePath);										// Deallocate memory of path after opening file because it is not needed anymore
 

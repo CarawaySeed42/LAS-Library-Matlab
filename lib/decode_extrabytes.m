@@ -31,7 +31,10 @@ function extByteStruct = decode_extrabytes(lasStruct)
 %   described extra values. Undocumented extra bytes have to be decoded by
 %   the user if they know their content.
 %
+% Copyright (c) 2022, Patrick Kümmerle
+% Licence: see the included file
 %
+%-------------------------------------------------------------------------
 % The following is how an extrabyte VLR is set up according to
 % LAS 1.4 Revision 15 specification
 %
@@ -84,7 +87,7 @@ if ~isstruct(lasStruct)
     error('Argument has to be a LAS Struct')
 end
 
-las_extrabyte_count = min(size(lasStruct.extradata));
+las_extrabyte_count = size(lasStruct.extradata, 2);
 
 if las_extrabyte_count == 0
     error('LAS Struct has no extradata field!')

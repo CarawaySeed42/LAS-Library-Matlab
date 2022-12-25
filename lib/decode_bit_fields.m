@@ -21,6 +21,10 @@ function bitfields = decode_bit_fields(lasStruct, optsReturnType)
 %   m:  Number of bitfields. Is 4 if LAS Version Minor is smaller than four
 %                            Is 6 if LAS Minor Version is exactly four
 %
+% Copyright (c) 2022, Patrick Kümmerle
+% Licence: see the included file
+%
+%-------------------------------------------------------------------------
 % Bit fields according to LAS 1.4 Revision 15 specification
 %
 % LAS 1.0 - 1.3:
@@ -36,7 +40,7 @@ function bitfields = decode_bit_fields(lasStruct, optsReturnType)
 %   Scanner Channel 2 bits (bits 4-5)
 %   Scan Direction Flag 1 bit (bit 6)
 %   Edge of Flight Line 1 bit (bit 7) 
-
+%% 
 
 supportedReturnTypes = {'matrix', 'struct'};
 returnType = 'matrix';
@@ -53,8 +57,12 @@ if ~isstruct(lasStruct)
     error('First argument has to be a LAS Struct')
 end
 
+if ~isfield(lasStruct, 'bits')
+    error('Input struct is missing the field: bits') 
+end
+
 if ~isfield(lasStruct.header, 'version_minor')
-    error('Input struct is missing the field las.header.version_minor') 
+    error('Input struct is missing the field: header.version_minor') 
 end
 
 if lasStruct.header.version_minor > 4 
@@ -68,6 +76,11 @@ end
 %% Differentiate between LAS Minor Versions and extract bit fields
 
 if lasStruct.header.version_minor == 4
+    
+    if ~isfield(lasStruct, 'bits2')
+        error('Input struct is missing the field: bits2')
+    end
+    
     % Allocate result matrix and assign extracted fields
     bitfields       = zeros(numel(lasStruct.bits), 6);
     

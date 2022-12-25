@@ -139,7 +139,7 @@ void LasDataReader::ReadPointData(std::ifstream& lasBin)
 	// Set this external buffer to be used as internal buffer of ifstream to avoid copying from internal to external buffer
 	lasBin.rdbuf()->pubsetbuf(buffer, bufferSize);
 
-	// Seek begining of point data again (the consistency check already did this, but do it again to make sure no other function manipulated the current position)
+	// Seek begining of point data 
 	lasBin.seekg(m_header.offsetToPointData, lasBin.beg);
 
 	// If unsafe Read then read coordinates and intensities and return early
