@@ -16,8 +16,8 @@ function lasStruct = encode_bit_fields(lasStruct, bitfields)
 % Input:
 %   lasStruct (struct)  : Structure containing las data and a field
 %                                 called 'bits' and 'bits2'
-%   bitfields (varies)  : nx4 matrix or nx6 matrix or structure with the
-%                         following fields
+%   bitfields (varies)  : nx4 matrix or nx6 matrix or Bitfields class with
+%                         following properties
 %
 %                          4 field input:
 %                              return_number
@@ -63,21 +63,21 @@ pointCount = 0;             % How many data points are there?
 
 
 %% Input checks
-% Check if struct input and turn it into matrix
-if isstruct(bitfields)
+% Check if Bitfields input and turn it into matrix
+if isa(bitfields, 'Bitfields')
 
     % Check if minimal input is present
-    if ~isfield(bitfields, 'return_number')
-        error('Input bitfields struct is missing the field: return_number')
+    if ~isprop(bitfields, 'return_number')
+        error('Input Bitfields instance is missing the field: return_number')
     end
-    if ~isfield(bitfields, 'number_of_returns')
-        error('Input bitfields struct is missing the field: number_of_returns')
+    if ~isprop(bitfields, 'number_of_returns')
+        error('Input Bitfields instance is missing the field: number_of_returns')
     end
-    if ~isfield(bitfields, 'scan_direction_flag')
-        error('Input bitfields struct is missing the field: scan_direction_flag')
+    if ~isprop(bitfields, 'scan_direction_flag')
+        error('Input Bitfields instance is missing the field: scan_direction_flag')
     end
-    if ~isfield(bitfields, 'edge_of_flight_line')
-        error('Input bitfields struct is missing the field: edge_of_flight_line')
+    if ~isprop(bitfields, 'edge_of_flight_line')
+        error('Input Bitfields instance is missing the field: edge_of_flight_line')
     end
     
     if ~isequal(numel(bitfields.return_number), numel(bitfields.number_of_returns),...
@@ -89,7 +89,7 @@ if isstruct(bitfields)
     pointCount = numel(bitfields.return_number);
     
     % Check for additional input
-    if isfield(bitfields, 'classification_flags') && isfield(bitfields, 'scanner_channel')
+    if isprop(bitfields, 'classification_flags') && isprop(bitfields, 'scanner_channel')
         encodeBits2 = true;
         
         if ~isequal(pointCount, numel(bitfields.classification_flags) , numel(bitfields.scanner_channel))
@@ -97,6 +97,12 @@ if isstruct(bitfields)
         end
     end
     
+    % Check if isExtended flag is set in Bitfields class instance
+    if isprop(bitfields, 'IsExtended')
+        encodeBits2 = bitfields.IsExtended && encodeBits2;
+    end
+    
+    % Create Matrix
     if ~encodeBits2
         bitfields = [bitfields.return_number, bitfields.number_of_returns,...
                      bitfields.scan_direction_flag, bitfields.edge_of_flight_line];

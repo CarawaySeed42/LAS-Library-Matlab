@@ -14,8 +14,7 @@ function bitfields = decode_bit_fields(lasStruct, optsReturnType)
 %
 % Optional return types:
 %   'matrix'    : Returns bit fields as a [nxm] double matrix (Standard)
-%   'struct'    : Returns bit fields in a struct having one field for every
-%                 data member
+%   'class'     : Returns bit fields in Bitfields class
 %
 %   n:  Number of LAS points
 %   m:  Number of bitfields. Is 4 if LAS Version Minor is smaller than four
@@ -42,7 +41,7 @@ function bitfields = decode_bit_fields(lasStruct, optsReturnType)
 %   Edge of Flight Line 1 bit (bit 7) 
 %% 
 
-supportedReturnTypes = {'matrix', 'struct'};
+supportedReturnTypes = {'matrix', 'class'};
 returnType = 'matrix';
 
 %% Input checks
@@ -93,8 +92,8 @@ if lasStruct.header.version_minor == 4
     bitfields(:,6)  = bitand(lasStruct.bits2, 1);                        % Edge of Flight Line
     
     % Change return type to struct if so chosen
-    if strcmp(returnType, 'struct')
-        tmpStruct = struct;
+    if strcmp(returnType, 'class')
+        tmpStruct = Bitfields(true);
         tmpStruct.return_number         = bitfields(:,1);
         tmpStruct.number_of_returns     = bitfields(:,2);
         tmpStruct.classification_flags  = bitfields(:,3);
@@ -114,8 +113,8 @@ else
     bitfields(:,4)  = bitand(lasStruct.bits, 1);                        % Edge of Flight Line
     
     % Change return type to struct if so chosen
-    if strcmp(returnType, 'struct')
-        tmpStruct = struct;
+    if strcmp(returnType, 'class')
+        tmpStruct = Bitfields(false);
         tmpStruct.return_number         = bitfields(:,1);
         tmpStruct.number_of_returns     = bitfields(:,2);
         tmpStruct.scan_direction_flag   = bitfields(:,3);

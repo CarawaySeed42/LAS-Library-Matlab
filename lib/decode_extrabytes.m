@@ -59,7 +59,7 @@ function extByteStruct = decode_extrabytes(lasStruct)
 
 %% Data Type Lookup Table
 
-% Unused and undocumented types get the max size of 8 bytes
+% Unused and undocumented types get the size of 0 bytes
 % Layout: [from_num, to_num, matlab_data_type, sizeof_type] 
 datatypeLookup = [...
     0,  0,  {'uint64'},  0;   ...  %  undocumented extra bytes specify value in options field
