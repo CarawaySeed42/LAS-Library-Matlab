@@ -268,21 +268,18 @@ private:
 	// Read XYZ Point Data,Intensities, advance the data and buffer pointer
 	inline void readXYZInt(char*& pBuffer) 
 	{
-		*m_mxStructPointer.pX = ((double)*reinterpret_cast<int32_t*>(pBuffer) * m_header.xScaleFactor) + m_header.xOffset;
+		*m_mxStructPointer.pX = ((double)*reinterpret_cast<int32_t*>(pBuffer)	* m_header.xScaleFactor) + m_header.xOffset;
 		m_mxStructPointer.pX++;
-		pBuffer += 4;
 
-		*m_mxStructPointer.pY = ((double)*reinterpret_cast<int32_t*>(pBuffer) * m_header.yScaleFactor) + m_header.yOffset;
+		*m_mxStructPointer.pY = ((double)*reinterpret_cast<int32_t*>(pBuffer+4)	* m_header.yScaleFactor) + m_header.yOffset;
 		m_mxStructPointer.pY++;
-		pBuffer += 4;
 
-		*m_mxStructPointer.pZ = ((double)*reinterpret_cast<int32_t*>(pBuffer) * m_header.zScaleFactor) + m_header.zOffset;
+		*m_mxStructPointer.pZ = ((double)*reinterpret_cast<int32_t*>(pBuffer+8)	* m_header.zScaleFactor) + m_header.zOffset;
 		m_mxStructPointer.pZ++;
-		pBuffer += 4;
 
-		*m_mxStructPointer.pIntensity = *reinterpret_cast<uint16_t*>(pBuffer);
+		*m_mxStructPointer.pIntensity = *reinterpret_cast<uint16_t*>(pBuffer+12);
 		m_mxStructPointer.pIntensity++;
-		pBuffer += 2;
+		pBuffer += 14;
 	}
 
 	// Read byte which contains different bit sized fields, advance the data and buffer pointer
@@ -354,15 +351,13 @@ private:
 	{
 		*m_mxStructPointer.pRed = *reinterpret_cast<uint16_t*>(pBuffer);
 		m_mxStructPointer.pRed++;
-		pBuffer += 2;
 
-		*m_mxStructPointer.pGreen = *reinterpret_cast<uint16_t*>(pBuffer);
+		*m_mxStructPointer.pGreen = *reinterpret_cast<uint16_t*>(pBuffer+2);
 		m_mxStructPointer.pGreen++;
-		pBuffer += 2;
 
-		*m_mxStructPointer.pBlue = *reinterpret_cast<uint16_t*>(pBuffer);
+		*m_mxStructPointer.pBlue = *reinterpret_cast<uint16_t*>(pBuffer+4);
 		m_mxStructPointer.pBlue++;
-		pBuffer += 2;
+		pBuffer += 6;
 	}
 
 	// Read 7 Wave Packet components, advance the data and buffer pointer
@@ -370,31 +365,25 @@ private:
 	{
 		*m_mxStructPointer.pWavePacketDescriptor = *reinterpret_cast<uint8_t*>(pBuffer);
 		m_mxStructPointer.pWavePacketDescriptor++;
-		pBuffer += 1;
 
-		*m_mxStructPointer.pWaveByteOffset = *reinterpret_cast<uint64_t*>(pBuffer);
+		*m_mxStructPointer.pWaveByteOffset = *reinterpret_cast<uint64_t*>(pBuffer+1);
 		m_mxStructPointer.pWaveByteOffset++;
-		pBuffer += 8;
 
-		*m_mxStructPointer.pWavePacketSize = *reinterpret_cast<uint32_t*>(pBuffer);
+		*m_mxStructPointer.pWavePacketSize = *reinterpret_cast<uint32_t*>(pBuffer+9);
 		m_mxStructPointer.pWavePacketSize++;
-		pBuffer += 4;
 
-		*m_mxStructPointer.pWaveReturnPoint = *reinterpret_cast<float*>(pBuffer);
+		*m_mxStructPointer.pWaveReturnPoint = *reinterpret_cast<float*>(pBuffer+13);
 		m_mxStructPointer.pWaveReturnPoint++;
-		pBuffer += 4;
 
-		*m_mxStructPointer.pWaveXt = *reinterpret_cast<float*>(pBuffer);
+		*m_mxStructPointer.pWaveXt = *reinterpret_cast<float*>(pBuffer+17);
 		m_mxStructPointer.pWaveXt++;
-		pBuffer += 4;
 
-		*m_mxStructPointer.pWaveYt = *reinterpret_cast<float*>(pBuffer);
+		*m_mxStructPointer.pWaveYt = *reinterpret_cast<float*>(pBuffer+21);
 		m_mxStructPointer.pWaveYt++;
-		pBuffer += 4;
 
-		*m_mxStructPointer.pWaveZt = *reinterpret_cast<float*>(pBuffer);
+		*m_mxStructPointer.pWaveZt = *reinterpret_cast<float*>(pBuffer+25);
 		m_mxStructPointer.pWaveZt++;
-		pBuffer += 4;
+		pBuffer += 29;
 	}
 
 	// Read NIR Value, advance the data and buffer pointer
