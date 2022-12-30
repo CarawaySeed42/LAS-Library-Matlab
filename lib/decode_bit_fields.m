@@ -4,6 +4,9 @@ function bitfields = decode_bit_fields(lasStruct, optsReturnType)
 %   The resulting data depends on if the LAS Minor Version is four or lower
 %   than four (LAS 1.0 - LAS 1.3 or LAS 1.4)
 %
+%   Decoding und structuring is done according to specification:
+%   LAS Specification 1.4 R15
+%
 % Input:
 %   lasStruct (struct)          : Structure containing las data and a field
 %                                 called 'bits' and 'bits2'
@@ -13,9 +16,9 @@ function bitfields = decode_bit_fields(lasStruct, optsReturnType)
 %   bitfields (varies)          : Matrix or Struct containing unpacked values
 %
 % Optional return types:
-%   'matrix'    : Returns bit fields as a [nxm] double matrix (Standard)
-%   'class'     : Returns bit fields in Bitfields class
-%
+%   'class'     : Returns bit fields in Bitfields class (Standard, smaller memory footprint)
+%   'matrix'    : Returns bit fields as a [nxm] double matrix 
+%   
 %   n:  Number of LAS points
 %   m:  Number of bitfields. Is 4 if LAS Version Minor is smaller than four
 %                            Is 6 if LAS Minor Version is exactly four
@@ -42,7 +45,7 @@ function bitfields = decode_bit_fields(lasStruct, optsReturnType)
 %% 
 
 supportedReturnTypes = {'matrix', 'class'};
-returnType = 'matrix';
+returnType = 'class';
 
 %% Input checks
 if nargin == 2
@@ -81,7 +84,7 @@ if lasStruct.header.version_minor == 4
     end
     
     % Allocate result matrix and assign extracted fields
-    bitfields       = zeros(numel(lasStruct.bits), 6);
+    bitfields       = zeros(numel(lasStruct.bits), 6, 'uint8');
     
     bitfields(:,1)  = bitshift(lasStruct.bits, -4, 'uint8');             % Return Number
     bitfields(:,2)  = bitand(lasStruct.bits, 15);                        % Number of Returns (Given Pulse)
@@ -105,7 +108,7 @@ if lasStruct.header.version_minor == 4
     end
 else
     % Allocate result matrix and assign extracted fields
-    bitfields       = zeros(numel(lasStruct.bits), 4);
+    bitfields       = zeros(numel(lasStruct.bits), 4, 'uint8');
     
     bitfields(:,1)  = bitshift(lasStruct.bits, -5, 'uint8');            % Return Number
     bitfields(:,2)  = bitand(bitshift(lasStruct.bits, -2, 'uint8'), 7); % Number of Returns (Given Pulse)

@@ -13,6 +13,9 @@ function lasStruct = encode_bit_fields(lasStruct, bitfields)
 %   Only LAS Versions up to 1.4 are supported for encoding because how the
 %   fields look for 1.5 is unknown at this point in time
 %
+%   Encoding is done according to specification:
+%   LAS Specification 1.4 R15
+%
 % Input:
 %   lasStruct (struct)  : Structure containing las data and a field
 %                                 called 'bits' and 'bits2'
