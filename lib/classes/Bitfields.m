@@ -1,8 +1,11 @@
 classdef Bitfields < dynamicprops
-    %Bitfields Construct an instance of this class
-    %   Holds properties of bitfields. Four properties for LAS 1.0 to 1.3
+    %Bitfields   : Class for LAS Point Data Bitfields
+    %   Holds properties of bitfields. Four fields for LAS 1.0 to 1.3
     %   and six bitfields for LAS 1.4 (->extended)
-    
+    %   The properties of an instance of this class are dynamic
+    %
+    % Copyright (c) 2022, Patrick Kümmerle
+    % Licence: see the included file    
     properties
         IsExtended
         return_number
