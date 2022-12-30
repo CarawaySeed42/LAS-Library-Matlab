@@ -11,6 +11,9 @@ function globalEncoding = decode_global_encoding(lasStruct)
 %   globalEncoding (GlobalEncoding) : GlobalEncoding object containing decoded data
 %
 % For more information about the output class object type 'help GlobalEncoding'
+%
+% Copyright (c) 2022, Patrick Kümmerle
+% Licence: see the included file
 
 if ~isstruct(lasStruct)
     error('Argument has to be a LAS Struct')
