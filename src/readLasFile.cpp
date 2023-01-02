@@ -123,6 +123,12 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 			// Allocate Rest of the Point Data if load only header is not chosen
 			lasReader.AllocateOutputStruct(plhs, lasBin);
 
+			// Read Variable Length Records if they are present
+			if (lasReader.HasVLR())
+			{
+				lasReader.ReadVLR(plhs, lasBin);
+			}
+
 			// Read Las Data
 			lasReader.ReadPointData(lasBin);
 
@@ -130,12 +136,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 			if (lasReader.HasExtVLR())
 			{
 				lasReader.ReadExtVLR(plhs, lasBin);
-			}
-
-			// Read Variable Length Records if they are present
-			if (lasReader.HasVLR()) 
-			{
-				lasReader.ReadVLR(plhs, lasBin);
 			}
 			
 			// Close file if it was still open

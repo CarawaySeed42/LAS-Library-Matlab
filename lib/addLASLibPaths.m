@@ -9,6 +9,8 @@ function addLASLibPaths()
 if ~isdeployed
     mpath = mfilename('fullpath');
     [path,~,~] = fileparts(mpath);
+    
+    addpath(path);
     addpath(fullfile(path,'/classes'));
 end
 end
