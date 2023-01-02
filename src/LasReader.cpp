@@ -84,15 +84,15 @@ void LasDataReader::ReadLasHeader(std::ifstream& lasBin)
 	}
 		
 	m_containsColors = false;
-	std::vector<int> pdf_with_colors = { 2, 3, 5, 7, 8, 10 };
-	if (std::any_of(std::begin(pdf_with_colors), std::end(pdf_with_colors), [&](int i) { return i == (int)m_header.PointDataRecordFormat; }))
+	std::vector<unsigned char> PDRF_Containing_Colors = { 2, 3, 5, 7, 8, 10 };
+	if (std::any_of(std::begin(PDRF_Containing_Colors), std::end(PDRF_Containing_Colors), [&](unsigned char i) { return i == m_header.PointDataRecordFormat; }))
 	{
 		m_containsColors = true;
 	}		
 
 	m_containsWavepackets = false;
-	std::vector<int> pdf_with_wavepakets = { 4, 5, 9, 10 };
-	if (std::any_of(std::begin(pdf_with_wavepakets), std::end(pdf_with_wavepakets), [&](int i) { return i == (int)m_header.PointDataRecordFormat; }))
+	std::vector<unsigned char> PDRF_Containing_Wavepackets = { 4, 5, 9, 10 };
+	if (std::any_of(std::begin(PDRF_Containing_Wavepackets), std::end(PDRF_Containing_Wavepackets), [&](unsigned char i) { return i == m_header.PointDataRecordFormat; }))
 	{
 		m_containsWavepackets = true;
 	}
