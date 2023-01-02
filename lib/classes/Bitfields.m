@@ -47,8 +47,7 @@ classdef Bitfields < dynamicprops
         end
         
         function Shorten(obj)
-            %Shorten Shortens the Bitfield to only contain fields relevant for
-            %        LAS 1.0 to 1.3
+            %Shorten Shortens the Bitfield to only contain fields relevant for LAS 1.0 to 1.3
             %   Removes the two properties classification_flags and scanner_channel
             %   if they exist
             if isprop(obj, 'classification_flags')

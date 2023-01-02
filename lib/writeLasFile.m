@@ -605,7 +605,7 @@ function obj = write_extradata(obj)
         end
 
         fseek(fid,double(obj.header.offset_to_point_data),-1);
-        columndatafwrite(fid,obj.extradata',OFFSET,LEN);
+        rowdatafwrite(fid,obj.extradata,OFFSET,LEN);
     end
     fclose(fid);
 end
@@ -658,6 +658,46 @@ function columndatafwrite(fid,data,columnpos,rowlength)
         tmp = typecast(tmp(:),'uint8');
         tmp = reshape(tmp,insertdatalen,[])';
         block(:,columnpos+1:columnpos+insertdatalen) = tmp;
+        block = block';
+        %write block back to file
+        fseek(fid,pos,-1);
+        fwrite(fid,block(:));
+    end
+end
+
+function rowdatafwrite(fid,data,rowpos,columnlength)
+    %fwrite with block read/write to have faster column writes
+    BLOCKROWS = 20000;
+
+    insertdatalen = length(typecast(data(:,1),'uint8'));
+    for k=1:BLOCKROWS:size(data,2)
+        pos = ftell(fid);
+        bend = k+BLOCKROWS-1;
+        if bend > size(data,2)
+            bend = size(data,2);
+        end
+
+        %find file size
+        fseek(fid,0,1);
+        filelen = ftell(fid);
+        fseek(fid,pos,-1);
+        %create empty space, because reading will fail otherwise
+        %next column write will be faster
+        if filelen < ftell(fid)+(bend-k+1)
+            need_to_allocate = (bend-k+1)*columnlength - (filelen-pos);
+            fwrite(fid,zeros(need_to_allocate,1,'uint8'));
+        end
+        fseek(fid,pos,-1);
+
+        %read block to memory
+        block = fread(fid,(bend-k+1)*columnlength,'*uint8');
+        block = reshape(block,columnlength,[])';
+
+        %add data in memory
+        tmp = data(:, k:bend);
+        tmp = typecast(tmp(:),'uint8');
+        tmp = reshape(tmp,insertdatalen,[])';
+        block(:,rowpos+1:rowpos+insertdatalen) = tmp;
         block = block';
         %write block back to file
         fseek(fid,pos,-1);

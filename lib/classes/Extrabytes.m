@@ -23,8 +23,8 @@ classdef Extrabytes < dynamicprops
         end
         
         function AddExtrabytes(obj, names)
-            %AddExtrabytes(names) Add a new extrabyte to this object. Adds 
-            %   a property for every specified name in argument names.
+            %AddExtrabytes Add a new extrabyte to this object.  
+            %   Adds a property for every specified name in argument names.
             %   Argument is a cell array containing char arrays specifying
             %   the names of the extrabytes
             if ~nargin || ~iscell(names)
@@ -72,9 +72,8 @@ classdef Extrabytes < dynamicprops
     
     methods(Static)
         function datatypeLookup = GetDataTypeLUT()
-            %GetDataTypeLUT Returns Look up table for the VLR byte that
-            %               specifies the data type to find out which
-            %               datatype was specified in VLR
+            %GetDataTypeLUT Returns Look up table for the VLR data type byte 
+            %               to find out which datatype was specified in VLR
             % Unused and undocumented types get the initial size of 0 bytes
             % Layout: [from_num, to_num, matlab_data_type, sizeof_type] 
             datatypeLookup = [...
