@@ -80,7 +80,7 @@ if ~isstruct(lasStruct)
     error('Argument has to be a LAS Struct')
 end
 
-las_extrabyte_count = size(lasStruct.extradata, 2);
+las_extrabyte_count = size(lasStruct.extradata, 1);
 
 if las_extrabyte_count == 0
     error('LAS Struct has no extradata field!')
@@ -205,8 +205,8 @@ for i = 1:length(extrabytes.extrabytenames)
     end
         
     % Create extrabyte data with correct data type
-    extrabytes.(name).decoded_data = zeros(size(lasStruct.extradata, 1),1);
-    tmpVector = reshape(lasStruct.extradata(:,byte_start:byte_start+byte_count-1)', 1, [])';
+    extrabytes.(name).decoded_data = zeros(size(lasStruct.extradata, 2),1);
+    tmpVector = reshape(lasStruct.extradata(byte_start:byte_start+byte_count-1, :), [], 1);
     extrabytes.(name).decoded_data = typecast(tmpVector, extrabytes.(name).descriptor.data_type.matlab_type);
     
     if extrabytes.(name).descriptor.options.scale_bit

@@ -196,7 +196,7 @@ try
     %calculate point record length and write it to header in file
     record_lengths = [20 28 26 34 57 63 30 36 38 59 67 ];
     obj.header.point_data_record_length = ...
-        record_lengths(obj.header.point_data_format+1) + size(obj.extradata,2);
+        record_lengths(obj.header.point_data_format+1) + size(obj.extradata,1);
     fseek(fid,105,-1);
     fwrite(fid,obj.header.point_data_record_length,'uint16');
     
@@ -598,14 +598,14 @@ function obj = write_extradata(obj)
     offsettable = [20 28 26 34 57 63 30 36 38 59 67]; %magic numbers from point record byte lengths
     OFFSET = offsettable(obj.header.point_data_format+1);
 
-    extralen = size(obj.extradata,2);
+    extralen = size(obj.extradata,1);
     if extralen %unknown extra data exists
         if ~isa(obj.extradata,'uint8')
             error(['Row extra data datatype is not: uint8'])
         end
 
         fseek(fid,double(obj.header.offset_to_point_data),-1);
-        columndatafwrite(fid,obj.extradata,OFFSET,LEN);
+        columndatafwrite(fid,obj.extradata',OFFSET,LEN);
     end
     fclose(fid);
 end

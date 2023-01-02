@@ -400,13 +400,9 @@ private:
 		for (int i = 0; i < m_extraByteCount; ++i)
 		{
 			*m_mxStructPointer.pExtraBytes = *reinterpret_cast<uint8_t*>(pBuffer);
-			m_mxStructPointer.pExtraBytes += m_numberOfPointsToRead;
+			++m_mxStructPointer.pExtraBytes;
 			++pBuffer;
 		}
-
-		// Revert the memory adress jumps and go to the first byte of the next point's extrabyte
-		//	- The jumps represent moving to the next matrix column because matlab uses column major ordering
-		m_mxStructPointer.pExtraBytes += 1 - m_extraByteCount * m_numberOfPointsToRead;
 	}
 
 };

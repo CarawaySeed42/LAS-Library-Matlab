@@ -391,7 +391,7 @@ void LasDataReader::AllocateOutputStruct(mxArray* plhs[], std::ifstream& lasBin)
 
 		if (m_containsExtraBytes)
 		{
-			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, (mwSize)m_extraByteCount, mxUINT8_CLASS, mxREAL);
+			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_extraByteCount, (mwSize)m_numberOfPointsToRead,  mxUINT8_CLASS, mxREAL);
 			mxSetField(plhs[0], 0, "extradata", pointerTocurrentMXArray);
 #if MX_HAS_INTERLEAVED_COMPLEX
 			m_mxStructPointer.pExtraBytes = mxGetUint8s(pointerTocurrentMXArray);
