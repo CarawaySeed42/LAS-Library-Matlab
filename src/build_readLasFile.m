@@ -5,17 +5,17 @@
 % Compiling with Interleaved Complex API is recommended but is only
 % supported from Matlab 2018a onwards
 % To compile without IC API, remove the -R2018a compiler option or use the
-% provided option in this script
+% provided option when using this script
 %
 % The following settings are available which the user is free to change
 %
 % Settings:
 %       outdir    : Output directory of mex file (Default is lib folder)
 %       debug     : Set true if debug version should be compiled
-%       UseInterleavedComplexAPI: Compile with Interleaved Complex API?
+%       UseInterleavedComplexAPI: Set true to compile with Interleaved Complex API
 %       verbose            : Set true to show verbose compilation log
 %       compiler_flags     : Additional compiler flags
-%       useCompilerOptions : Should the set compiler flags be used?
+%       useCompilerOptions : Set true to use the set compiler_flags
 %
 % Compilation example:
 % mex -R2018a readLasFile.cpp LAS_IO.cpp LasReader.cpp
@@ -31,6 +31,7 @@ compiler_flags = '-std=c++17';
 useCompilerFlags = false;
 
 %% -----------------------------------------------------------------------
+disp('');
 % Translate user settings to compiler options
 debugFlag = '';
 if debug
@@ -44,7 +45,12 @@ end
 
 interleaveOpts = '';
 if UseInterleavedComplexAPI
-    interleaveOpts = '-R2018a';  
+    if ~verLessThan('matlab','9.4')
+        interleaveOpts = '-R2018a';
+    else
+        disp(['Compiling without Interleaved Complex API due to ',...
+              'Matlab Version being older than 9.4']);
+    end
 end
 
 combinedFlag = '';
