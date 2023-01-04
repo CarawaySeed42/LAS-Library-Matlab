@@ -2,7 +2,8 @@ function extrabytes = decode_extrabytes(lasStruct)
 %extrabytesStruct = decode_extrabytes(lasStruct)
 %   Decode variable length record (VLR) and extra bytes (extradata) 
 %   following point data of LAS struct to Extrabytes object.
-%   Extra Byte descriptors with the same name are not allowed
+%   Extra Byte descriptors with the same name will be changed for class
+%   properties. Undocumented extra bytes will be ignored
 %
 %   Decoding und structuring is done according to specification:
 %   LAS Specification 1.4 R15
