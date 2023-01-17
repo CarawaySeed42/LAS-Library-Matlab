@@ -36,8 +36,7 @@ For more information on mex-functions see [here](https://www.mathworks.com/help/
 
 ---
 ### Credits
-The LAS-File writer contained in this library is a port of the writer present within the [lasdata](https://www.mathworks.com/matlabcentral/fileexchange/48073-lasdata) class with minor adjustments<br>
-coded by Teemu Kumpumäki
+The LAS-File writer contained in this library is a port of the writer present within the [lasdata](https://www.mathworks.com/matlabcentral/fileexchange/48073-lasdata) <br>class by Teemu Kumpumäki with minor adjustments 
 
 `Copyright (c) 2016, Teemu Kumpumäki. 
 All rights reserved.`
