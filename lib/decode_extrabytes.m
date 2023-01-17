@@ -16,7 +16,7 @@ function extrabytes = decode_extrabytes(lasStruct)
 %
 %
 %   Extrabytes class:
-%   - Cell array property called extrabytenames containing extra byte names
+%   - Cell array property called ExtrabyteNames containing extra byte names
 %   - n properties named after the extra byte specified in it's descriptor
 %     With n being the amount of extra data present
 %       - descriptor:   Contents of the decoded descriptor
@@ -31,7 +31,7 @@ function extrabytes = decode_extrabytes(lasStruct)
 %   Descriptors states the names "extra1" and "extra2". This results in 
 %   three properties in extrabytes. Two properties contain their respective 
 %   decoded descriptor field and the decoded uint16 value in decoded_data.
-%   extrabytenames property specifies the names of the extra data values
+%   ExtrabyteNames property specifies the names of the extra data values
 %
 % Caution:
 %   It will be assumed that the first extra byte VLR describes the first
@@ -118,7 +118,7 @@ for k = 1:vlr_extrabyte_count
         % name is unique and valid
         extrabyte_name = char(descriptor_data(5:36))';
         field_name = VariableNames.MakeValid(extrabyte_name);
-        nameOccupied = strcmp(extrabytes.extrabytenames, field_name);
+        nameOccupied = strcmp(extrabytes.ExtrabyteNames, field_name);
         if any(nameOccupied)
             field_name = strcat(field_name,'_', num2str(sum(nameOccupied)+1));
         end
@@ -141,7 +141,7 @@ for k = 1:vlr_extrabyte_count
             dataSize = extrabytes.(field_name).descriptor.options.raw;
         end
         
-        % No_data, min and max should be upcast to 8 bytes
+        % No_data, min and max should have been upcast to 8 bytes
         upcastTmp       = 'uint64';
         if sum(typeTmp == datatypeIndices.signed) > 0
             upcastTmp       = 'int64';
@@ -150,7 +150,7 @@ for k = 1:vlr_extrabyte_count
         end
         
         extrabytes.(field_name).descriptor.data_type.matlab_type = matlabType;
-        extrabytes.(field_name).descriptor.data_type.size = dataSize;
+        extrabytes.(field_name).descriptor.data_type.size = uint8(dataSize);
         
         extrabytes.(field_name).descriptor.name        = extrabyte_name;                                       % 32 Byte
         extrabytes.(field_name).descriptor.unused      = uint8(descriptor_data(37:40));                        % 4 Byte
@@ -188,9 +188,9 @@ end
 
 % Now finally decode the extrabytes at the end of every single data point
 byte_start = 1;
-for i = 1:length(extrabytes.extrabytenames)
+for i = 1:length(extrabytes.ExtrabyteNames)
     
-    name = extrabytes.extrabytenames{i};
+    name = extrabytes.ExtrabyteNames{i};
     byte_count = extrabytes.(name).descriptor.data_type.size;
     
     % If undocumented or unsupported extra bytes then do not decode

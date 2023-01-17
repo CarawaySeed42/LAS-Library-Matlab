@@ -31,7 +31,7 @@ compiler_flags = '-std=c++17';
 useCompilerFlags = false;
 
 %% -----------------------------------------------------------------------
-disp('');
+fprintf('-------------------------------------------------------------\n');
 % Translate user settings to compiler options
 debugFlag = '';
 if debug
@@ -65,3 +65,5 @@ fprintf(1, 'Compiler Input: %s\n', [interleaveOpts, ' ', verboseFlag, ' ', debug
 % Compile File
 mex(interleaveOpts, verboseFlag, debugFlag, combinedFlag, 'readLasFile.cpp', 'LAS_IO.cpp',...
     'LasReader.cpp', 'VariableLengthRecords.cpp', 'LASAlloc.cpp', '-outdir', outdir)
+
+fprintf('-------------------------------------------------------------\n');

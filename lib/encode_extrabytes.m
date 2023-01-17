@@ -6,6 +6,7 @@ function lasStruct = encode_extrabytes(lasStruct, extrabytes, VLRDescription, ad
 %   the already existing if addToExisting flag is true. Otherwise it will
 %   be overwritten. If more then one extrabytes VLR exists then only
 %   the first will be recognized and the other one will be deleted!
+%   Undocumented extrabytes will be encoded as uint64!
 %
 %
 %   Encoding und structuring is done according to specification:
@@ -27,7 +28,7 @@ function lasStruct = encode_extrabytes(lasStruct, extrabytes, VLRDescription, ad
 %                                 extradata and corresponding VLR
 %
 %   Extrabytes class:
-%   - Cell array property called extrabytenames containing extra byte names
+%   - Cell array property called ExtrabyteNames containing extra byte names
 %   - n properties named after the extra byte specified in it's descriptor
 %     With n being the amount of extra data present
 %       - descriptor:   Contents of the decoded descriptor
@@ -49,7 +50,7 @@ end
 
 %% Definitions and Initializations
 descriptor_Size = 192;
-extradata_Count = size(extrabytes.extrabytenames,2);
+extradata_Count = size(extrabytes.ExtrabyteNames,2);
 extrabytes_Data_Type = cell(extradata_Count, 1);
 
 % Data Type Lookup Table
@@ -101,7 +102,7 @@ lasStruct.variablerecords(vlr_index).description    = VLRDescription;
 for i = 1:extradata_Count
     
     % Get the property that we are encoding
-    curPropName = extrabytes.extrabytenames{i};
+    curPropName = extrabytes.ExtrabyteNames{i};
     curProp = extrabytes.(curPropName);
     descriptor_data = zeros(descriptor_Size, 1, 'uint8');
     
@@ -141,9 +142,9 @@ lasStruct.variablerecords(vlr_index).data_as_text = char(lasStruct.variablerecor
 lasStruct.variablerecords(vlr_index).record_length  = length(lasStruct.variablerecords(vlr_index).data);
 
 %% Encode the extrabytes
-for i = 1:length(extrabytes.extrabytenames)
+for i = 1:length(extrabytes.ExtrabyteNames)
     
-    curPropName = extrabytes.extrabytenames{i};
+    curPropName = extrabytes.ExtrabyteNames{i};
     curProp     = extrabytes.(curPropName);
     
     % Apply scale and offset and turn data into target type
