@@ -1,6 +1,9 @@
 % This script compiles the readLasFile mex file
 % Can be compiled with Microsoft Visual C++ 2019 (and likely newer)
 % and latest MinGW-w64 Compiler. Tested on Windows 10 x64 platform!
+% Other compilers will probably work but have not been tested.
+% For available compilers enter the folling into the matlab command window:
+%   mex -setup cpp
 %
 % Compiling with Interleaved Complex API is recommended but is only
 % supported from Matlab 2018a onwards
@@ -55,7 +58,7 @@ end
 
 combinedFlag = '';
 if useCompilerFlags
-    combinedFlag = ['COMPFLAGS=''$COMPFLAGS ' compiler_flags ''''];
+    combinedFlag = ['CXXFLAGS=$CXXFLAGS ' compiler_flags];
 end
 
 % Print chosen options

@@ -92,9 +92,9 @@ classdef Extrabytes < dynamicprops
             end
         end
         
-        function SetExtrabyteData(obj, name, data)
-            %SetExtrabyteData  Set the data values of the extra byte values per point record
-            %  SetExtrabyteData(data) 
+        function SetData(obj, name, data)
+            %SetData  Set the data values of the extra byte values per point record
+            %  SetData(data) 
             %  Set the extrabyte data for the extra byte specified by name
             %  data should be a [n x 1] vector with n being the number of
             %  point records and thus extra byte values in the point cloud
@@ -108,9 +108,9 @@ classdef Extrabytes < dynamicprops
             obj.(name).decoded_data = data;
         end
         
-        function data = GetExtrabyteData(obj, name)
-            %GetExtrabyteData  Get the data values of the extra byte values per point record
-            %  data = GetExtrabyteData(name)
+        function data = GetData(obj, name)
+            %GetData  Get the data values of the extra byte values per point record
+            %  data = GetData(name)
             %  Get the extrabyte data for the extra byte specified by name
             data = obj.(name).decoded_data;
         end
@@ -128,25 +128,25 @@ classdef Extrabytes < dynamicprops
                 names = {names};
             end
             
-            LUT_Row = -1;
+            lookupRow = -1;
             datatypeLookup = Extrabytes.GetDataTypeLUT();
             
             if isnumeric(datatype)
-                LUT_Row    = datatype;
+                lookupRow    = datatype;
             elseif ischar(datatype)
-                LUT_Row    = find(strcmp(datatype,datatypeLookup(:,3)));
-                LUT_Row    = LUT_Row(cell2mat(datatypeLookup(LUT_Row, 4)) ~= 0);
+                lookupRow    = find(strcmp(datatype,datatypeLookup(:,3)));
+                lookupRow    = lookupRow(cell2mat(datatypeLookup(lookupRow, 4)) ~= 0);
             end
             
-            if LUT_Row == -1 || isempty(LUT_Row)
+            if isempty(lookupRow)
                 error('Data type argument could not be assigned to matlab data type!')
             end
             
             for i = 1:length(names)
                 field_name = names{i};
-                obj.(field_name).descriptor.data_type.matlab_type = datatypeLookup{LUT_Row, 3};
-                obj.(field_name).descriptor.data_type.raw         = uint8(datatypeLookup{LUT_Row, 1});
-                obj.(field_name).descriptor.data_type.size        = uint8(datatypeLookup{LUT_Row, 4});
+                obj.(field_name).descriptor.data_type.matlab_type = datatypeLookup{lookupRow, 3};
+                obj.(field_name).descriptor.data_type.raw         = uint8(datatypeLookup{lookupRow, 1});
+                obj.(field_name).descriptor.data_type.size        = uint8(datatypeLookup{lookupRow, 4});
             end
         end
         
@@ -160,9 +160,9 @@ classdef Extrabytes < dynamicprops
             datatype.size        = obj.(name).descriptor.data_type.size;
         end
         
-        function SetOptions(obj, names, no_data, min, max, scale, offset)
+        function SetOptions(obj, names, no_data_bit, min_bit, max_bit, scale_bit, offset_bit)
             %SetOptions Specify if options fields are relevant or not
-            %   SetOptions(names, no_data, min, max, scale, offset)
+            %   SetOptions(names, no_data_bit, min_bit, max_bit, scale_bit, offset_bit)
             %   Encodes the chosen settings into a single value.
             %   Input no_data, min, max, scale and offset will be converted
             %   to logical. If true then the bit will be set to specify
@@ -176,13 +176,13 @@ classdef Extrabytes < dynamicprops
             
             for i = 1:length(names)
                 field_name = names{i};
-                optionsTmp = logical(no_data)*1 + logical(min)*2 + logical(max)*4 + logical(scale)*8 + logical(offset)*16;
+                optionsTmp = logical(no_data_bit)*1 + logical(min_bit)*2 + logical(max_bit)*4 + logical(scale_bit)*8 + logical(offset_bit)*16;
                 obj.(field_name).descriptor.options.raw = uint8(optionsTmp);
-                obj.(field_name).descriptor.options.no_data_bit = logical(no_data);
-                obj.(field_name).descriptor.options.min_bit     = logical(min);
-                obj.(field_name).descriptor.options.max_bit     = logical(max);
-                obj.(field_name).descriptor.options.scale_bit   = logical(scale);
-                obj.(field_name).descriptor.options.offset_bit  = logical(offset);
+                obj.(field_name).descriptor.options.no_data_bit = logical(no_data_bit);
+                obj.(field_name).descriptor.options.min_bit     = logical(min_bit);
+                obj.(field_name).descriptor.options.max_bit     = logical(max_bit);
+                obj.(field_name).descriptor.options.scale_bit   = logical(scale_bit);
+                obj.(field_name).descriptor.options.offset_bit  = logical(offset_bit);
             end
         end
                
@@ -309,7 +309,7 @@ classdef Extrabytes < dynamicprops
                 6,  6,  {'int32'},   4;   ...  %  long 4 bytes
                 7,  7,  {'uint64'},  8;   ...  %  unsigned long long 8 bytes
                 8,  8,  {'int64'},   8;   ...  %  long long 8 bytes
-                9,  9,  {'float'},   4;   ...  %  float 4 bytes
+                9,  9,  {'single'},   4;   ...  %  single 4 bytes
                 10, 10, {'double'},  8;   ...  %  double 8 bytes
                 11, 30, {'uint64'},  0;   ...  %  Deprecated
                 31, 255,{'uint64'},  0;   ...  %  Reserved not assigned
@@ -323,7 +323,7 @@ classdef Extrabytes < dynamicprops
             %   Contains unsigned, signed, floating point
             %   or undocumented datatypes 
             datatypeIndices = struct('unsigned', [0,1,3,5,7], 'signed', [2,4,6,8],...
-                                     'float', [9,10]);
+                                     'single', [9,10]);
         end
         
     end

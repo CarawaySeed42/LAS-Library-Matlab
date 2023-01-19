@@ -18,11 +18,13 @@ function lasStruct = encode_extrabytes(lasStruct, extrabytes, VLRDescription, ad
 %   extrabytes (Extrabytes)     : Instance of extrabytes object containing
 %                                 extrabytes data
 %   Optional:
-%   VLRDescription (char array) : Description of the VLR. If none is
+%   VLRDescription (char array) : Default: 'Extra Bytes'
+%                                 Description of the VLR. If none is
 %                                 provided then 'Extrabytes' will be written
-%   addToExisting (bool)        : If False existing extrabytes will be
+%   addToExisting (bool)        : Default: false
+%                                 If False existing extrabytes will be
 %                                 overwritten. If True extrabytes will be
-%                                 added
+%                                 added. 
 % Returns:
 %   lasStruct (struct)          : Modified Input struct with encoded
 %                                 extradata and corresponding VLR
@@ -42,7 +44,7 @@ function lasStruct = encode_extrabytes(lasStruct, extrabytes, VLRDescription, ad
 
 
 if nargin < 3
-    VLRDescription = 'Extrabytes';
+    VLRDescription = 'Extra Bytes';
 end
 if nargin < 4
     addToExisting = false;
@@ -52,6 +54,7 @@ end
 descriptor_Size = 192;
 extradata_Count = size(extrabytes.ExtrabyteNames,2);
 extrabytes_Data_Type = cell(extradata_Count, 1);
+vlr_index = [];
 
 % Data Type Lookup Table
 % Static information about potential data types of extrabytes
@@ -70,7 +73,9 @@ end
 
 % Check if Extrabytes VLR already exists. If so get index and overwrite with
 % new data if specified. If not then create the VLR and take the index
-vlr_index         = find([lasStruct.variablerecords.record_id] == 4);
+if isfield(lasStruct.variablerecords, 'record_id')
+    vlr_index         = find([lasStruct.variablerecords.record_id] == 4);
+end
 vlr_count         = numel(vlr_index);
 
 if isempty(vlr_index)
@@ -116,15 +121,22 @@ for i = 1:extradata_Count
     upcastTmp       = 'uint64';
     if sum(data_type_encoded == datatypeIndices.signed) > 0
         upcastTmp       = 'int64';
-    elseif sum(data_type_encoded == datatypeIndices.float) > 0
+    elseif sum(data_type_encoded == datatypeIndices.single) > 0
         upcastTmp       = 'double';
     end
+    
+    % If descriptor name is smaller than 32 then pad it,
+    % if longer then trim it
+    nameLength = length(curProp.descriptor.name);
+    if nameLength > 32; nameLength = 32; end
+    descriptorName = char(zeros(1,32));
+    descriptorName(1:nameLength) = curProp.descriptor.name;
     
     % Write information to descriptor data field (Deprecated and unused
     % fields stay NULL)
     descriptor_data(3)          = uint8(curProp.descriptor.data_type.raw);                      % 1  Byte
     descriptor_data(4)          = uint8(curProp.descriptor.options.raw);                        % 1  Byte
-    descriptor_data(5:36)       = curProp.descriptor.name;                                      % 32 Bytes
+    descriptor_data(5:36)       = descriptorName;                                               % 32 Bytes
     descriptor_data(41:48)      = typecast(cast(curProp.descriptor.no_data,upcastTmp) ,'uint8');% 8 Bytes any type
     descriptor_data(65:72)      = typecast(cast(curProp.descriptor.min,upcastTmp), 'uint8');    % 8 Bytes any type
     descriptor_data(89:96)      = typecast(cast(curProp.descriptor.max,upcastTmp), 'uint8');    % 8 Bytes any type

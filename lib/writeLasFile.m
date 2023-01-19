@@ -24,8 +24,7 @@ function obj = writeLasFile(obj, filename, majorversion, minorversion, pointform
 MException = []; % Empty Matlab Exception
 try
     %prevent overwriting
-    %if you like to overwrite files, then read all variables to memory
-    %at this point and disable check
+    %if you like to overwrite files, then disable check
     %         [pathtmp,filetmp,ext]=fileparts(obj.filename);
     %         if isempty(pathtmp); pathtmp = pwd; end
     %         orgfile = [pathtmp '/' filetmp ext];
@@ -76,6 +75,7 @@ try
     newheader.max_z = max(obj.z);
     newheader.min_z = min(obj.z);
     newheader.filename = filename;
+    newheader.number_of_variable_records = length(obj.variablerecords);
     
     fid = fopen(filename,'w');
     try
@@ -85,7 +85,6 @@ try
         obj.header = oldheader;
         error(['Error writing las header: ' err.getReport]);
     end
-    obj.header = oldheader;
     
     LEN = length(obj.x);
     
@@ -236,7 +235,6 @@ try
     end
     
     fclose(fid);
-    obj.header = oldheader;
     
 catch MException
 end
