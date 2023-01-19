@@ -36,13 +36,10 @@ For more information on mex-functions see [here](https://www.mathworks.com/help/
 
 ---
 ### Credits
-The LAS-File writer contained in this library is a port of the writer present within the [lasdata](https://www.mathworks.com/matlabcentral/fileexchange/48073-lasdata) <br>class by Teemu Kumpumäki with minor adjustments 
-
-`Copyright (c) 2016, Teemu Kumpumäki. 
-All rights reserved.`
-
+The LAS-File writer contained in this library is a port of the writer present within the [lasdata](https://www.mathworks.com/matlabcentral/fileexchange/48073-lasdata) <br>class by Teemu Kumpumäki with minor adjustments<br>
 To keep compatibility with the LAS-Writer the imported data is kept in line with the lasdata properties but how the data is read is completely<br>
-independend of the lasdata class. Big thanks to Teemu Kumpumäki for being the inspiration for this project
+independend of the lasdata class. Big thanks to Teemu Kumpumäki for being the inspiration for this project.
+License is included within source
 
 ---
 ### License
