@@ -78,13 +78,17 @@ datatypeIndices = Extrabytes.GetDataTypeIndices();
 %% Input Check and Initializations
 
 if ~isstruct(lasStruct)
-    error('Argument has to be a LAS Struct')
+    error('Argument has to be a LAS Structure')
 end
 
 las_extrabyte_count = size(lasStruct.extradata, 1);
 
 if las_extrabyte_count == 0
-    error('LAS Struct has no extradata field!')
+    error('LAS Structure has no extradata field!')
+end
+
+if isempty(lasStruct.variablerecords)
+    error('There are no VLRs in LAS Structure to describe extra bytes')
 end
 
 % How many extra byte VLRs exist. There should be only 0 or 1 but if a
@@ -93,6 +97,10 @@ end
 vlr_documented_bytes_count  = 0;
 vlr_is_extrabyte_index      = find([lasStruct.variablerecords.record_id] == 4);
 vlr_extrabyte_count         = numel(vlr_is_extrabyte_index);
+
+if isempty(vlr_extrabyte_count)
+    error('LAS Structure has no VLR with record_id 4 to describe extra bytes!')
+end
 
 %% Processing
 
@@ -145,7 +153,7 @@ for k = 1:vlr_extrabyte_count
         upcastTmp       = 'uint64';
         if sum(typeTmp == datatypeIndices.signed) > 0
             upcastTmp       = 'int64';
-        elseif sum(typeTmp == datatypeIndices.float) > 0
+        elseif sum(typeTmp == datatypeIndices.single) > 0
             upcastTmp       = 'double';
         end
         
