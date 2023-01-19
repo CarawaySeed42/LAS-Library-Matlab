@@ -4,6 +4,7 @@
 % The extra bytes are arbitrarily chosen to be the X,Y distance to the middle
 % of the point data
 fprintf('\nRun: sample_AddExtrabytes\n');
+
 %% Add required paths
 addpath('../lib')
 addLASLibPaths()

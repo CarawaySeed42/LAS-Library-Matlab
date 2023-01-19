@@ -13,6 +13,10 @@ if isempty(targetDirectory) || ~exist(targetDirectory, 'dir')
     [targetDirectory, ~, ~] = fileparts(mfilename('fullpath'));
 end
 
+%% Add required paths
+addpath('../lib')
+addLASLibPaths()
+
 %%
 lasFiles = dir(fullfile(targetDirectory, '*.las'));
 currentMegabytes = 0;
@@ -25,7 +29,7 @@ tic;
 for i = 1:size(lasFiles, 1)
     
     t1 = toc;
-    test = readLasFile(fullfile(lasFiles(i).folder, lasFiles(i).name));
+    pcloud = readLasFile(fullfile(lasFiles(i).folder, lasFiles(i).name));
     t2 = toc;
     
     fileSize = lasFiles(i).bytes/bytesInMB;

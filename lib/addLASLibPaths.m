@@ -12,6 +12,7 @@ if ~isdeployed
     
     addpath(path);
     addpath(fullfile(path,'/classes'));
+    addpath(fullfile(path,'/writer'));
 end
 end
 
