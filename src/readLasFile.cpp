@@ -20,6 +20,8 @@
 % (optional)    optsString  [char array]:   Optional input option string
 %
 % optsString:   'LoadOnlyHeader' - Fill only header struct
+%				'VLR'			 - Get header and variable length records
+%								   Does not include extended VLRs
 %               'LoadAll'        - Loads all of the point data
 %                                  (same as with only one given input)
 % 
@@ -48,15 +50,16 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 
 	/* Check for proper number of arguments */
 	if (nrhs != 1 && nrhs != 2) {
-		mexErrMsgIdAndTxt("MEX:readLasFile:nargin", "This function requires one or two input arguments!");
+		mexErrMsgIdAndTxt("MEX:readLasFile:nargin", "This function allows one or two input arguments!");
 	}
 	if (nlhs != 1) {
-		mexErrMsgIdAndTxt("MEX:readLasFile:nargout", "This function requires exactly one output argument");
+		mexErrMsgIdAndTxt("MEX:readLasFile:nargout", "This function allows exactly one output argument");
 	}
 
 	/* Check if the input is of proper type and determine input options if given */
-	// Flag if reading of the file should stop after header
+	// Flag if reading of the file should stop after header or Variable Length Records
 	bool loadOnlyHeader = false;
+	bool returnAfterVLR = false;
 
 	if (!mxIsChar(prhs[0])) { // is not char array
 		mexErrMsgIdAndTxt("MEX:readLasFile:typeargin", "Argument has to be path to LAS-File as char array!");
@@ -66,23 +69,23 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 
 		if (mxIsChar(prhs[1])) { // If second argument is char array
 
-			char* optsString = mxArrayToString(prhs[1]);
+			char* opttionalArgument = mxArrayToString(prhs[1]);
 
-			if (std::strcmp(optsString, "LoadOnlyHeader") == 0)
+			if (std::strcmp(opttionalArgument, "LoadOnlyHeader") == 0)
 			{
 				loadOnlyHeader = true;
 			}
-			else if (std::strcmp(optsString, "LoadAll") == 0)
+			else if (std::strcmp(opttionalArgument, "VLR") == 0)
 			{
-				// loadOnlyHeader was initalized as false so this is unnecessary. It is just here to show that LoadAll just executes the standard procedure
-				loadOnlyHeader = false;
+				returnAfterVLR = true;
 			}
-			else
+			else if (std::strcmp(opttionalArgument, "LoadAll") != 0)
 			{
-				mxFree(optsString);
+				mxFree(opttionalArgument);
 				mexErrMsgIdAndTxt("MEX:readLasFile:valueargin", "The entered second argument is not a valid option/command!");
 			}
-			mxFree(optsString);
+
+			mxFree(opttionalArgument);
 		}
 		else
 		{
@@ -120,14 +123,20 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 				return; 
 			} 
 
-			// Allocate Rest of the Point Data if load only header is not chosen
-			lasReader.AllocateOutputStruct(plhs, lasBin);
-
 			// Read Variable Length Records if they are present
 			if (lasReader.HasVLR())
 			{
 				lasReader.ReadVLR(plhs, lasBin);
 			}
+
+			// If specified then return after loading VLRs
+			if (returnAfterVLR) {
+				if (lasBin.is_open()) { lasBin.close(); }
+				return;
+			}
+
+			// Allocate Rest of the Point Data if load only header is not chosen
+			lasReader.AllocateOutputStruct(plhs, lasBin);
 
 			// Read Las Data
 			lasReader.ReadPointData(lasBin);

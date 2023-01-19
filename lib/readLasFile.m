@@ -19,7 +19,9 @@
 % Input:        lasFilePath [char array]:	Full Path to LAS-File
 % (optional)    optsString  [char array]:   Optional input option string
 %
-% optsString:   'LoadOnlyHeader' - Fill only header struct
+% optsString:   'LoadOnlyHeader' - Fill header struct only
+%               'VLR'			 - Get header and variable length records
+%                                  Does not include extended VLRs
 %               'LoadAll'        - Loads all of the point data
 %                                  (same as with only one given input)
 % 
@@ -31,7 +33,7 @@
 %
 % Source: readLasFile.cpp LAS_IO.cpp LasReader.cpp
 %         VariableLengthRecords.cpp  LASAlloc.cpp
-% To rebuild this function run the provided script 'make_readLasFile.m'
+% To rebuild this function run the provided script 'build_readLasFile.m'
 %
 % Copyright (c) 2022, Patrick Kümmerle
 % Licence: see the included file
