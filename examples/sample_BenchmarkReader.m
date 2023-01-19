@@ -1,19 +1,26 @@
 % Benchmark the LAS-File Reader function
-% Set a target folder from which every .las-File will be imported. 
+% Set a target directory from which every .las-File will be imported. 
 % The more files the better. tictoc is used as a timer which is not very
 % accurate but should provide a satisfying result as long as the file sizes
-% aren't too small
+% aren't too small.
+% If no valid target directory is set, then the directory of this script
+% will be used
 %% Choose the target directory containing LAS-Files
 
-targetFolder = 'E:\Arbeit\Test_PW';
+targetDirectory = 'D:\SampleFolderPlaceholder';
+
+if isempty(targetDirectory) || ~exist(targetDirectory, 'dir')
+    [targetDirectory, ~, ~] = fileparts(mfilename('fullpath'));
+end
 
 %%
-lasFiles = dir(fullfile(targetFolder, '*.las'));
+lasFiles = dir(fullfile(targetDirectory, '*.las'));
 currentMegabytes = 0;
 totalTime = 0;
 bytesInMB = 1024^2;
 
-fprintf('\nStart Benchmarking...\n');
+fprintf('\nDirectory: %s\n', targetDirectory);
+fprintf('Start Benchmarking...\n');
 tic;
 for i = 1:size(lasFiles, 1)
     
