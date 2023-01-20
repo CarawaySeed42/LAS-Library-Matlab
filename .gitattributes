@@ -1,0 +1,7 @@
+# Matlab binary files
+*.mexw64 	binary
+*.mexmaci64 binary
+*.mexa64 	binary
+*.fig 		binary
+*.mat 		binary
+*.mlapp 	binary
