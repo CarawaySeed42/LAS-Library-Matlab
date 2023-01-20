@@ -17,14 +17,14 @@ This aims to be a library for reading, writing and extracting LAS files (LIDAR d
 ---
 ### How to Build
 All Matlab scripts can be used as is.<br>
-This repository already contains the compiled LAS-File reader (readLasFile.mexw64) which should work with MatlabR2018b and newer.<br>
+This repository already contains the compiled LAS-File reader (readLasFile.mexw64) which should work with Windows and MatlabR2018b and newer.<br>
 If you need to build the file reader yourself then you can use the provided build script (build_readLasFile.m) or <br>
 compile it yourself from the matlab command window.
 
 Needless to say, you need to have a [compiler supported by matlab](https://de.mathworks.com/support/requirements/previous-releases.html)<br>
 (Type 'help mex' in matlab command window for more information)  
 
-To build without build script, change current path to .../src and execute:
+To build without script, change current path to .../src and execute:
 <br>
 <br>
 ```mex -R2018a readLasFile.cpp LAS_IO.cpp LasReader.cpp VariableLengthRecords.cpp LASAlloc.cpp -outdir ../lib```
@@ -47,6 +47,6 @@ This library is released under the MIT license with exception of the LAS-Writer 
 
 ---
 ### Plans for the Future
-- Write a C++ LAS-Writer
+- Create a fast C++ LAS-Writer
 - Support decoding of all variable length records predefined within LAS Specification 1.4 R15
 - Support external waveform data
