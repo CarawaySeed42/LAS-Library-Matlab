@@ -96,15 +96,15 @@ if lasStruct.header.version_minor == 4
     
     % Change return type to struct if so chosen
     if strcmp(returnType, 'class')
-        tmpStruct = Bitfields(true);
-        tmpStruct.return_number         = bitfields(:,1);
-        tmpStruct.number_of_returns     = bitfields(:,2);
-        tmpStruct.classification_flags  = bitfields(:,3);
-        tmpStruct.scanner_channel       = bitfields(:,4);
-        tmpStruct.scan_direction_flag   = bitfields(:,5);
-        tmpStruct.edge_of_flight_line   = bitfields(:,6);
+        tmpObject = Bitfields(true);
+        tmpObject.return_number         = bitfields(:,1);
+        tmpObject.number_of_returns     = bitfields(:,2);
+        tmpObject.classification_flags  = bitfields(:,3);
+        tmpObject.scanner_channel       = bitfields(:,4);
+        tmpObject.scan_direction_flag   = bitfields(:,5);
+        tmpObject.edge_of_flight_line   = bitfields(:,6);
         
-        bitfields = tmpStruct;
+        bitfields = tmpObject;
     end
 else
     % Allocate result matrix and assign extracted fields
@@ -117,13 +117,13 @@ else
     
     % Change return type to struct if so chosen
     if strcmp(returnType, 'class')
-        tmpStruct = Bitfields(false);
-        tmpStruct.return_number         = bitfields(:,1);
-        tmpStruct.number_of_returns     = bitfields(:,2);
-        tmpStruct.scan_direction_flag   = bitfields(:,3);
-        tmpStruct.edge_of_flight_line   = bitfields(:,4);
+        tmpObject = Bitfields(false);
+        tmpObject.return_number         = bitfields(:,1);
+        tmpObject.number_of_returns     = bitfields(:,2);
+        tmpObject.scan_direction_flag   = bitfields(:,3);
+        tmpObject.edge_of_flight_line   = bitfields(:,4);
         
-        bitfields = tmpStruct;
+        bitfields = tmpObject;
     end
 end
 
