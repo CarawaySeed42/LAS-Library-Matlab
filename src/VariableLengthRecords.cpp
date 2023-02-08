@@ -44,7 +44,7 @@ void LasDataReader::readVLRHeader(std::ifstream& lasBin)
 void LasDataReader::readExtVLRHeader(std::ifstream& lasBin)
 {
 	char* pBuffer = &m_ExtVLRHeader.extvlrhBytes[0];
-	lasBin.read(pBuffer, 54);
+	lasBin.read(pBuffer, 60);
 
 	m_ExtVLRHeader.reserved					= *reinterpret_cast<unsigned short*>(pBuffer);
 	m_ExtVLRHeader.recordID					= *reinterpret_cast<unsigned short*>(pBuffer + 18);

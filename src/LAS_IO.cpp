@@ -1,3 +1,6 @@
+#ifndef LAS_IO_H
+#define LAS_IO_H
+
 #include "mex.h"
 #include <algorithm>
 #include <array>
@@ -406,3 +409,29 @@ private:
 	}
 
 };
+
+class LasDataWriter : public LAS_IO
+{
+private:
+	// How many points to read? Header info is ambigous due to legacy and LAS 1.4 field
+	unsigned long long m_numberOfPointsToWrite = 0;
+
+	//Record lengths of Point Data Formats according to specifications
+	const size_t m_record_lengths_size = m_record_lengths.size();
+
+public:
+	bool GetHeader(mxArray* LASstructure[]);
+
+	bool GetData(mxArray* LASstructure[]);
+
+	bool WriteLASheader(std::ofstream& lasBin);
+
+	bool WriteVLR(std::ofstream& lasBin);
+
+	bool WriteExtVLR(std::ofstream& lasBin);
+
+	bool WriteLASdata(std::ofstream& lasBin);
+};
+
+
+#endif

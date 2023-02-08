@@ -12,9 +12,9 @@ function las = writeLasFileFast(las, filename, majorversion, minorversion, point
 %   Input:
 %       las [struct]        : Struct containing point cloud data
 %       filename [string]   : Full Path to output file
-%       majorversion [uint] : Major Version of LAS File
-%       minorversion [uint] : Minor Verison of LAS File
-%       pointformat [uint]  : Point Data Format of LAS File
+%       majorversion [uint] : Major Version of output LAS File
+%       minorversion [uint] : Minor Verison of output LAS File
+%       pointformat [uint]  : Point Data Record Format of output LAS File
 %       optional [struct]   : Optional input arguments
 %
 %       optional options:
@@ -315,7 +315,9 @@ if ~keepCreationDate || ~isfield(lasHeader, 'file_creation_day_of_year') || ~isf
 end
 
 % Set header size
-if lasHeader.version_minor < 6
+if lasHeader.version_minor < 3
+	lasHeader.header_size = 227;
+elseif lasHeader.version_minor < 4
     lasHeader.header_size = 235;
 else
     lasHeader.header_size = 375;
@@ -386,6 +388,9 @@ lasHeader.max_z = max(las.z);
 lasHeader.min_z = min(las.z);
 
 if lasHeader.version_minor > 2
+	if ~isfield(lasHeader,'start_of_waveform_data')
+		lasHeader.start_of_waveform_data = 0;
+	end
     if length(lasHeader.start_of_waveform_data) ~= 1
         lasHeader.start_of_waveform_data = 0;
     end

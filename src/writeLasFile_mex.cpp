@@ -1,6 +1,6 @@
 /*%==========================================================
 % readLas2Struct.mexw64 - MEX-File
-% lasStruct = readLasFile(lasFilePath)
+% lasStruct = writeLASFile_mex(las, filename, majorversion, minorversion, pointformat)
 % lasStruct = readLasFile(lasFilePath, optsString)
 % 
 % Supports Point Data Record Format 0 to 10. Partially supports other PDRF.
@@ -45,127 +45,87 @@
 #include <cstring>
 #include "LAS_IO.cpp"
 
+
 /* The gateway function. */
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 
 	/* Check for proper number of arguments */
-	if (nrhs != 1 && nrhs != 2) {
-		mexErrMsgIdAndTxt("MEX:readLasFile:nargin", "This function allows one or two input arguments!");
+	if (nrhs < 2) {
+		mexErrMsgIdAndTxt("MEX:writeLASFile_mex:nargin", "Two or three input arguments required!");
 	}
-	if (nlhs != 1) {
-		mexErrMsgIdAndTxt("MEX:readLasFile:nargout", "This function allows exactly one output argument");
+	if (nrhs > 3) {
+		mexWarnMsgIdAndTxt("MEX:writeLASFile_mex:nargin", "More than three arguments provided! Extra arguments will be ignored!");
 	}
-
-	/* Check if the input is of proper type and determine input options if given */
-	// Flag if reading of the file should stop after header or Variable Length Records
-	bool loadOnlyHeader = false;
-	bool returnAfterVLR = false;
-
-	if (!mxIsChar(prhs[0])) { // is not char array
-		mexErrMsgIdAndTxt("MEX:readLasFile:typeargin", "Argument has to be path to LAS-File as char array!");
+	if (nlhs > 1) {
+		mexErrMsgIdAndTxt("MEX:writeLASFile_mex:nargout", "One or no output argument required");
 	}
 
-	if (nrhs == 2) { // if second argument given
+	if (!mxIsChar(prhs[1])) { // is not char array
+		mexErrMsgIdAndTxt("MEX:writeLASFile_mex:typeargin", "Second argument has to be path to target LAS-File as char array!");
+	}
 
-		if (mxIsChar(prhs[1])) { // If second argument is char array
-
-			char* opttionalArgument = mxArrayToString(prhs[1]);
-
-			if (std::strcmp(opttionalArgument, "LoadOnlyHeader") == 0)
-			{
-				loadOnlyHeader = true;
-			}
-			else if (std::strcmp(opttionalArgument, "VLR") == 0)
-			{
-				returnAfterVLR = true;
-			}
-			else if (std::strcmp(opttionalArgument, "LoadAll") != 0)
-			{
-				mxFree(opttionalArgument);
-				mexErrMsgIdAndTxt("MEX:readLasFile:valueargin", "The entered second argument is not a valid option/command!");
-			}
-
-			mxFree(opttionalArgument);
+	/*
+	if (nrhs > 2) {
+		if (!mxIsLogical(prhs[2])) { // is not char array
+			mexErrMsgIdAndTxt("MEX:writeLASFile_mex:typeargin", "Third argument has to be logical!");
 		}
-		else
-		{
-			mexErrMsgIdAndTxt("MEX:readLasFile:typeargin", "If second Argument is given then it has to be a char array!");
-		}
+
+		autodetect = *mxGetLogicals(prhs[2]);
 	}
+	*/
 
 	// Get Path from input and open file
-	char* filePath = mxArrayToString(prhs[0]);
-
-	std::ios_base::sync_with_stdio(false);
-	std::ifstream lasBin;	
-	lasBin.rdbuf()->pubsetbuf(0, 0);						
-	lasBin.open(filePath, std::ios::in | std::ios::binary);	// Open File
+	char* filePath = mxArrayToString(prhs[1]);
+	std::ofstream lasBin(filePath, std::ios::out | std::ios::binary);
 	mxFree(filePath);										// Deallocate memory of path after opening file because it is not needed anymore
 
 	if (lasBin.is_open()) {
 		try {
-			// Initialize instance of lasDataReader class
-			LasDataReader lasReader;
+			// Initialize instance of lasDataWriter class
+			LasDataWriter lasWriter;
 
-			// Read Header and then check it
-			lasReader.ReadLasHeader(lasBin);
-			bool headerGood = lasReader.CheckHeaderConsistency(lasBin);
+			lasWriter.GetData(plhs);
+			lasWriter.WriteLASheader(lasBin);
 
-			// Create Output Structure
-			lasReader.InitializeOutputStruct(plhs, lasBin);
+			// Read Write point cloud info to header
+			//lasWriter.fillHeader_with_CloudInfo(pcPointer);
 
-			// Fill Header of output Structure
-			lasReader.FillStructHeader(lasBin);
-
-			// If load only header chosen or header is bad then return
-			if (loadOnlyHeader || !headerGood) {
-				if (lasBin.is_open()) { lasBin.close(); }
-				return; 
-			} 
-
-			// Read Variable Length Records if they are present
-			if (lasReader.HasVLR())
-			{
-				lasReader.ReadVLR(plhs, lasBin);
+			/*if (enforceDataFormat) {
+				lasWriter.PointDataRecordFormat = pointDataFormat;
+			}
+			else {
+				pointDataFormat = lasWriter.determinePointDataFormat(pcPointer);
+				lasWriter.PointDataRecordFormat = pointDataFormat;
 			}
 
-			// If specified then return after loading VLRs
-			if (returnAfterVLR) {
-				if (lasBin.is_open()) { lasBin.close(); }
-				return;
-			}
+			RhinoApp().SetCommandPromptMessage(L"Write Point Cloud...");
+			RhinoApp().Wait(0);
 
-			// Allocate Rest of the Point Data if load only header is not chosen
-			lasReader.AllocateOutputStruct(plhs, lasBin);
+			lasWriter.writeLasHeader(lasBin);
+			lasWriter.writePointData(lasBin, pcPointer, maxThreadCount);*/
 
-			// Read Las Data
-			lasReader.ReadPointData(lasBin);
-
-			// Read Extended Variable Length Records if they are present
-			if (lasReader.HasExtVLR())
-			{
-				lasReader.ReadExtVLR(plhs, lasBin);
-			}
-			
-			// Close file if it was still open
-			if (lasBin.is_open()) { lasBin.close(); }
-
+			lasBin.close();
 		}
 		catch (const std::bad_alloc& ba) {
 			if (lasBin.is_open()) { lasBin.close(); }
-			mexErrMsgIdAndTxt("MEX:readLasFile:bad_alloc", ba.what());
+			mexErrMsgIdAndTxt("MEX:writeLASFile_mex:bad_alloc", ba.what());
 		}
 		catch (const std::exception& ex) {
 			if (lasBin.is_open()) { lasBin.close(); }
-			mexErrMsgIdAndTxt("MEX:readLasFile:Exception", ex.what());
+			mexErrMsgIdAndTxt("MEX:writeLASFile_mex:Exception", ex.what());
 		}
 		catch (...) {
 			if (lasBin.is_open()) { lasBin.close(); }
-			mexErrMsgIdAndTxt("MEX:readLasFile:unhandledException", "Unhandled Exception occured");
+			mexErrMsgIdAndTxt("MEX:writeLASFile_mex:unhandledException", "Unhandled Exception occured");
 		}
 	}
 	else
 	{
-		mexErrMsgIdAndTxt("MEX:readLasFile:invalidArgumentException", "File could not be opened!");
+		mexErrMsgIdAndTxt("MEX:writeLASFile_mex:invalidArgumentException", "File could not be opened for writing");
 	}
+
+	if (lasBin.is_open()) {
+		lasBin.close();
+	}
+
 };

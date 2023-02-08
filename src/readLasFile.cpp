@@ -69,23 +69,23 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 
 		if (mxIsChar(prhs[1])) { // If second argument is char array
 
-			char* opttionalArgument = mxArrayToString(prhs[1]);
+			char* optionalArgument = mxArrayToString(prhs[1]);
 
-			if (std::strcmp(opttionalArgument, "LoadOnlyHeader") == 0)
+			if (std::strcmp(optionalArgument, "LoadOnlyHeader") == 0)
 			{
 				loadOnlyHeader = true;
 			}
-			else if (std::strcmp(opttionalArgument, "VLR") == 0)
+			else if (std::strcmp(optionalArgument, "VLR") == 0)
 			{
 				returnAfterVLR = true;
 			}
-			else if (std::strcmp(opttionalArgument, "LoadAll") != 0)
+			else if (std::strcmp(optionalArgument, "LoadAll") != 0)
 			{
-				mxFree(opttionalArgument);
+				mxFree(optionalArgument);
 				mexErrMsgIdAndTxt("MEX:readLasFile:valueargin", "The entered second argument is not a valid option/command!");
 			}
 
-			mxFree(opttionalArgument);
+			mxFree(optionalArgument);
 		}
 		else
 		{
