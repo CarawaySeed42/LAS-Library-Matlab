@@ -94,9 +94,18 @@ end
 % How many extra byte VLRs exist. There should be only 0 or 1 but if a
 % writer writes a extrabyte VLR per extradata value then this will also be
 % supported
+extVlr_is_extrabyte_index = [];
 vlr_documented_bytes_count  = 0;
 vlr_is_extrabyte_index      = find([lasStruct.variablerecords.record_id] == 4);
-vlr_extrabyte_count         = numel(vlr_is_extrabyte_index);
+
+if ~isempty(lasStruct.extendedvariables)
+    extVlr_is_extrabyte_index   = find([lasStruct.extendedvariables.record_id] == 4);
+end
+vlr_extrabyte_count         = numel(vlr_is_extrabyte_index) + numel(extVlr_is_extrabyte_index);
+
+% Combine VLR and extended VLR because extrabytes could be in both
+extrabyteVLRs = [lasStruct.variablerecords(vlr_is_extrabyte_index);...
+                 lasStruct.extendedvariables(extVlr_is_extrabyte_index)];
 
 if isempty(vlr_extrabyte_count)
     error('LAS Structure has no VLR with record_id 4 to describe extra bytes!')
@@ -111,16 +120,15 @@ descriptor_Size = 192;
 % Iterate through extrabyte VLRs (Should be zero or one)
 for k = 1:vlr_extrabyte_count
     
-    current_vlr_index = vlr_is_extrabyte_index(k);
-    extrabyte_descriptor_count = round(length(lasStruct.variablerecords(current_vlr_index).data) / descriptor_Size);
-     if (mod(lasStruct.variablerecords(current_vlr_index).record_length, 192) ~= 0)
+    extrabyte_descriptor_count = round(length(extrabyteVLRs(k).data) / descriptor_Size);
+     if (mod(extrabyteVLRs(k).record_length, 192) ~= 0)
         error('Record Length of Extra Byte Variable Length Record is not a multiple of %d', descriptor_Size);
     end
     
     % Extract information from every descriptor
     for i = 1:extrabyte_descriptor_count
         
-        descriptor_data = lasStruct.variablerecords(current_vlr_index).data(((i-1)*descriptor_Size)+1:i*descriptor_Size);
+        descriptor_data = extrabyteVLRs(k).data(((i-1)*descriptor_Size)+1:i*descriptor_Size);
         
         % Add property with name of extra value, but make sure that the
         % name is unique and valid

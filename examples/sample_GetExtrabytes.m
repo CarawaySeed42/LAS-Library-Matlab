@@ -15,7 +15,20 @@ mpath = mfilename('fullpath');
 lasDir = strcat(path, '\', 'modified_samples');
 lasFilePath = fullfile(lasDir, 'sample_extrabytes.las');
 fprintf('     Reading File: %s\n', lasFilePath);
+
+% In this example we read the header and VLRs first to check if Extrabytes
+% are present. Extrabytes have the record_id 4 assigned to them.
 pcloud = readLasFile(lasFilePath, 'VLR');
+
+if sum([pcloud.variablerecords.record_id] == 4) > 0
+    fprintf('       File contains ExtraBytes confirmed!\n');
+end
+
+% Then we read the whole file
+pcloud = readLasFile(lasFilePath);
+
+% The check for Extrabytes was just a demonstration and is not neccessary.
+% The decoding would fail anyway if Extrabytes are missing
 
 %% Decode extra bytes
 fprintf('     Decoding Extra Bytes...\n');
