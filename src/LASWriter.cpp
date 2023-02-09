@@ -34,6 +34,19 @@
 
 #endif
 
+constexpr auto size_char		= sizeof(char);
+constexpr auto size_signedchar	= sizeof(signed char);
+constexpr auto size_uint8		= sizeof(unsigned char);
+constexpr auto size_double		= sizeof(double);
+constexpr auto size_float		= sizeof(float);
+constexpr auto size_uint16		= sizeof(unsigned short);
+constexpr auto size_int16		= sizeof(short);
+constexpr auto size_uint32		= sizeof(unsigned long);
+constexpr auto size_int32		= sizeof(long);
+constexpr auto size_uint64		= sizeof(unsigned long long);
+
+constexpr auto size_3_int32		= 3 * sizeof(long);
+constexpr auto size_3_uint16	= 3 * sizeof(unsigned short);
 
 bool LasDataWriter::WriteLASheader(std::ofstream& lasBin)
 {
@@ -50,6 +63,7 @@ bool LasDataWriter::WriteLASheader(std::ofstream& lasBin)
 	FileCreationDayOfYear = (unsigned short)aTime.tm_yday;
 	*/
 
+	// Write every single 
 	char FileSignature[] = "LASF";
 	std::strcpy(m_header.fileSignature, FileSignature);
 
@@ -103,7 +117,7 @@ bool LasDataWriter::WriteLASheader(std::ofstream& lasBin)
 		lasBin.write((char*)&m_headerExt4.startOfFirstExtendedVariableLengthRecord, 8);
 		lasBin.write((char*)&m_headerExt4.numberOfExtendedVariableLengthRecords, 4);
 		lasBin.write((char*)&m_headerExt4.numberOfPointRecords, 8);
-		lasBin.write((char*)&m_headerExt4.numberOfPointsByReturn, 8*15);
+		lasBin.write((char*)&m_headerExt4.numberOfPointsByReturn, 120);
 	}
 
 	
@@ -119,57 +133,213 @@ bool LasDataWriter::WriteLASheader(std::ofstream& lasBin)
 		return false;
 	}
 
+	SetInternalRecordFormatID();
+
 	return true;
 }
 
 
 bool LasDataWriter::WriteLASdata(std::ofstream& lasBin)
 {
+	// Check if datatype sizes are correct during compilation
+	static_assert(sizeof(char) == 1,			"Char should have a size of 1! But it is not on this machine!");
+	static_assert(sizeof(unsigned char) == 1,	"Unsigned Char should have a size of 1! But it is not on this machine!");
+	static_assert(sizeof(long) == 4,			"Long should have a size of 4! But it is not on this machine!");
+	static_assert(sizeof(unsigned short) == 2,	"Unsigned Short should have a size of 2! But it is not on this machine!");
+	static_assert(sizeof(double) == 8,			"double should have a size of 8! But it is not on this machine!");
+
+	// Initialilzations
+	int writeBufferPointSize = 4096;	// How many Points are written per write call
+	size_t pointOffset = 0;				// pointOffset is offset to the current cloud point to process
+	size_t bufOffPointStart = 0;		// Offset to current position in write Buffer
+
+	// Get Interal record format and get all the byte offsets to LAS Fields
+	SetInternalRecordFormatID();
+
+	const int record_length         = m_header.PointDataRecordLength;
+	const int extradata_Byte		= m_record_lengths[m_internalPointDataRecordID];
+
+	const int bits2_Byte			= m_bits2_Byte			[m_internalPointDataRecordID];
+	const int classification_Byte	= m_classification_Byte	[m_internalPointDataRecordID];
+	const int scanAngle_Byte		= m_scanAngle_Byte		[m_internalPointDataRecordID];
+	const int userData_Byte			= m_userData_Byte		[m_internalPointDataRecordID];
+	const int pointSourceID_Byte	= m_pointSourceID_Byte	[m_internalPointDataRecordID];
+	const int time_Byte				= m_time_Byte			[m_internalPointDataRecordID];
+	const int color_Byte			= m_color_Byte			[m_internalPointDataRecordID];
+	const int NIR_Byte				= m_NIR_Byte			[m_internalPointDataRecordID];
+	const int wavePackets_Byte		= m_wavePackets_Byte	[m_internalPointDataRecordID];
+
+	const bool doWriteBits2			= bits2_Byte != 0;			// Is Bits2 field to be written
+	const bool doWriteTime			= time_Byte  != 0;			// Is Time field to be written
+	const bool doWriteColor			= color_Byte != 0;			// Is Color field to be written
+	const bool doWriteNIR			= NIR_Byte   != 0;			// Is NIR field to be written
+	const bool doWriteWavePackets	= wavePackets_Byte != 0;	// Is Wave Packets field to be written
+	const bool isScanAngle16Bit		= scanAngle_Byte == 18;		// Is Scan Angle field a 16 bit / 2 byte value
+
+	// Const copies of frequently accessed struct values
+	const double xScale = m_header.xScaleFactor;
+	const double yScale = m_header.yScaleFactor;
+	const double zScale = m_header.zScaleFactor;
+	const double xOff	= m_header.xOffset;
+	const double yOff	= m_header.yOffset;
+	const double zOff	= m_header.zOffset;
+
+	// Seek start of point data in file
+	if (!lasBin.is_open()) { throw std::ofstream::failure("File is not open or not writable!"); }
+	lasBin.seekp(m_header.offsetToPointData, lasBin.beg);
+
+	int32_t XYZ_Coordinates[3] = { 0 };
+	unsigned short intensity = 0;
+	unsigned short colors[3] = { 0 };
+
+	// Calculate number of full write blocks and the remaining points inside the last block
+	const int fullChunksCount = static_cast<int>(m_numberOfPointsToWrite / writeBufferPointSize);
+	const int pointsToWriteAtEnd = static_cast<int>(m_numberOfPointsToWrite - (static_cast<unsigned long long>(writeBufferPointSize) * fullChunksCount));
+
+	// Create Write Buffer
+	const int bufferLength = static_cast<int>(m_header.PointDataRecordLength) * writeBufferPointSize;
+	std::unique_ptr<char[]>  uniqueBuffer(new char[bufferLength]);
+	char* pBuffer = uniqueBuffer.get();
+
+	// Set Buffer to Zero
+	std::memset(pBuffer, 0, bufferLength * size_char);
+
+	// Don't check for file still good for every chunk
+	const unsigned int fileCheckInterval = 30;
+
+	/* Data write loop */
+	for (size_t i = 0; i < (fullChunksCount + 1); ++i)
+	{
+		if ((i % fileCheckInterval == 0)) {
+
+			if (!lasBin.good()) { throw std::ofstream::failure("Error during file write! Stream went bad!"); }
+		}
+
+		// Current Position in point array
+		pointOffset = static_cast<size_t>(i) * writeBufferPointSize;
+
+		// If last Iteration then we have to reduce buffer size
+		if (i == fullChunksCount) { writeBufferPointSize = pointsToWriteAtEnd; }
+
+		// Fill write buffer with all the fields which are supposed to be written
+		for (int k = 0; k < writeBufferPointSize; ++k)
+		{
+			bufOffPointStart = (size_t)k * m_header.PointDataRecordLength;
+
+			// Create final values of static LAS fields which have to be written to file
+			XYZ_Coordinates[0]	= std::lround((m_mxStructPointer.pX[pointOffset + k] - xOff) / xScale);
+			XYZ_Coordinates[1]	= std::lround((m_mxStructPointer.pY[pointOffset + k] - yOff) / yScale);
+			XYZ_Coordinates[2]	= std::lround((m_mxStructPointer.pZ[pointOffset + k] - zOff) / zScale);
+			intensity			= std::lround(m_mxStructPointer.pIntensity[pointOffset + k]);
+
+			// Copy values to write buffer
+			std::memcpy(pBuffer + bufOffPointStart,		 &XYZ_Coordinates[0], size_3_int32);
+			std::memcpy(pBuffer + bufOffPointStart + 12, &intensity,		  size_uint16);
+			std::memcpy(pBuffer + bufOffPointStart + 14, &m_mxStructPointer.pBits[pointOffset + k], size_uint16);
+
+			// Write other fields according to point data record format
+			if (doWriteBits2){	
+				std::memcpy(pBuffer + bufOffPointStart + bits2_Byte, &m_mxStructPointer.pBits[pointOffset + k],	size_uint8); 
+			}
+
+			std::memcpy(pBuffer + bufOffPointStart + classification_Byte, &m_mxStructPointer.pClassicfication[pointOffset + k],	size_uint8);
+			std::memcpy(pBuffer + bufOffPointStart + userData_Byte, &m_mxStructPointer.pUserData[pointOffset + k], size_uint8);
+
+			if (isScanAngle16Bit) 
+			{
+				std::memcpy(pBuffer + bufOffPointStart + scanAngle_Byte, &m_mxStructPointer.pScanAngle_16Bit[pointOffset + k], size_int16);
+			}
+			else 
+			{
+				std::memcpy(pBuffer + bufOffPointStart + scanAngle_Byte, &m_mxStructPointer.pScanAngle[pointOffset + k], size_signedchar);
+			}
+
+			std::memcpy(pBuffer + bufOffPointStart + pointSourceID_Byte, &m_mxStructPointer.pPointSourceID[pointOffset + k], size_uint16);
+
+			if (doWriteTime){	
+				std::memcpy(pBuffer + bufOffPointStart + time_Byte,  &m_mxStructPointer.pGPS_Time[pointOffset + k], size_double); 
+			}
+			
+			if (doWriteColor)
+			{
+				colors[0] = static_cast<unsigned short>(m_mxStructPointer.pRed[pointOffset + k]);
+				colors[1] = static_cast<unsigned short>(m_mxStructPointer.pGreen[pointOffset + k]);
+				colors[2] = static_cast<unsigned short>(m_mxStructPointer.pBlue[pointOffset + k]);
+				memcpy(pBuffer + bufOffPointStart + color_Byte, &colors[0], size_3_uint16);
+
+			}
+
+			if (doWriteNIR) 
+			{
+				std::memcpy(pBuffer + bufOffPointStart + NIR_Byte, &m_mxStructPointer.pNIR[pointOffset + k], size_uint16);
+			}
+
+			if (doWriteWavePackets)
+			{
+				std::memcpy(pBuffer + bufOffPointStart + wavePackets_Byte,		&m_mxStructPointer.pWavePacketDescriptor[pointOffset + k], size_uint8);
+				std::memcpy(pBuffer + bufOffPointStart + wavePackets_Byte + 1,	&m_mxStructPointer.pWaveByteOffset[pointOffset + k], size_uint64);
+				std::memcpy(pBuffer + bufOffPointStart + wavePackets_Byte + 9,	&m_mxStructPointer.pWavePacketSize[pointOffset + k], size_uint32);
+				std::memcpy(pBuffer + bufOffPointStart + wavePackets_Byte + 13, &m_mxStructPointer.pWaveReturnPoint[pointOffset + k], size_float);
+				std::memcpy(pBuffer + bufOffPointStart + wavePackets_Byte + 17, &m_mxStructPointer.pWaveXt[pointOffset + k], size_float);
+				std::memcpy(pBuffer + bufOffPointStart + wavePackets_Byte + 21, &m_mxStructPointer.pWaveYt[pointOffset + k], size_float);
+				std::memcpy(pBuffer + bufOffPointStart + wavePackets_Byte + 25, &m_mxStructPointer.pWaveZt[pointOffset + k], size_float);
+			}
+		}
+
+		// Finally write buffer to file
+		lasBin.write(pBuffer, static_cast<std::streamsize>(writeBufferPointSize) * m_header.PointDataRecordLength * size_char);
+		
+	}
 
 	return true;
 }
 
-bool LasDataWriter::GetHeader(mxArray* prhs[])
+bool LasDataWriter::GetHeader(const mxArray* const prhs[])
 {
 	mxDouble* pMXDouble;
 	mxChar* pMXChar;
+	mxArray* pMxHeader = mxGetField(prhs[0], 0, "header");
 
-	m_header.sourceID = static_cast<uint16_t>(*GetDoubles(mxGetField(prhs[0], 0, "source_id")));
-	m_header.globalEncoding = static_cast<uint16_t>(*GetDoubles(mxGetField(prhs[0], 0, "global_encoding")));
-	m_header.projectID_GUID_1 = static_cast<uint32_t>(*GetDoubles(mxGetField(prhs[0], 0, "project_id_guid1")));
-	m_header.projectID_GUID_2 = static_cast<uint16_t>(*GetDoubles(mxGetField(prhs[0], 0, "project_id_guid2")));
-	m_header.projectID_GUID_3 = static_cast<uint16_t>(*GetDoubles(mxGetField(prhs[0], 0, "project_id_guid3")));
+	if (nullptr == pMxHeader) {
+		mexErrMsgIdAndTxt("MEX:GetHeader:AccessViolation", "Could not access header field of LAS structure!");
+	}
 
-	pMXDouble = GetDoubles(mxGetField(prhs[0], 0, "project_id_guid4"));
+	m_header.sourceID = static_cast<uint16_t>(*GetDoubles(mxGetField(pMxHeader, 0, "source_id")));
+	m_header.globalEncoding = static_cast<uint16_t>(*GetDoubles(mxGetField(pMxHeader, 0, "global_encoding")));
+	m_header.projectID_GUID_1 = static_cast<uint32_t>(*GetDoubles(mxGetField(pMxHeader, 0, "project_id_guid1")));
+	m_header.projectID_GUID_2 = static_cast<uint16_t>(*GetDoubles(mxGetField(pMxHeader, 0, "project_id_guid2")));
+	m_header.projectID_GUID_3 = static_cast<uint16_t>(*GetDoubles(mxGetField(pMxHeader, 0, "project_id_guid3")));
+
+	pMXDouble = GetDoubles(mxGetField(pMxHeader, 0, "project_id_guid4"));
 	for (int i = 0; i < 8; ++i) { m_header.projectID_GUID_4[i] = static_cast<uint8_t>(pMXDouble[i]); }
 
-	m_header.versionMajor = static_cast<uint8_t>(*GetDoubles(mxGetField(prhs[0], 0, "version_major")));
-	m_header.versionMinor = static_cast<uint8_t>(*GetDoubles(mxGetField(prhs[0], 0, "version_minor")));
+	m_header.versionMajor = static_cast<uint8_t>(*GetDoubles(mxGetField(pMxHeader, 0, "version_major")));
+	m_header.versionMinor = static_cast<uint8_t>(*GetDoubles(mxGetField(pMxHeader, 0, "version_minor")));
 
-	m_header.fileCreationDayOfYear = static_cast<uint16_t>(*GetDoubles(mxGetField(prhs[0], 0, "file_creation_day_of_year")));
-	m_header.fileCreationYear = static_cast<uint16_t>(*GetDoubles(mxGetField(prhs[0], 0, "file_creation_year")));
-	m_header.headerSize = static_cast<uint16_t>(*GetDoubles(mxGetField(prhs[0], 0, "header_size")));
-	m_header.offsetToPointData = static_cast<uint32_t>(*GetDoubles(mxGetField(prhs[0], 0, "offset_to_point_data")));
-	m_header.numberOfVariableLengthRecords = static_cast<uint32_t>(*GetDoubles(mxGetField(prhs[0], 0, "number_of_variable_records")));
+	m_header.fileCreationDayOfYear = static_cast<uint16_t>(*GetDoubles(mxGetField(pMxHeader, 0, "file_creation_day_of_year")));
+	m_header.fileCreationYear = static_cast<uint16_t>(*GetDoubles(mxGetField(pMxHeader, 0, "file_creation_year")));
+	m_header.headerSize = static_cast<uint16_t>(*GetDoubles(mxGetField(pMxHeader, 0, "header_size")));
+	m_header.offsetToPointData = static_cast<uint32_t>(*GetDoubles(mxGetField(pMxHeader, 0, "offset_to_point_data")));
+	m_header.numberOfVariableLengthRecords = static_cast<uint32_t>(*GetDoubles(mxGetField(pMxHeader, 0, "number_of_variable_records")));
 	m_header.LegacyNumberOfPointRecords = 0;
 
-	m_header.PointDataRecordFormat = static_cast<uint8_t>(*GetDoubles(mxGetField(prhs[0], 0, "point_data_format")));
-	m_header.PointDataRecordLength = static_cast<uint16_t>(*GetDoubles(mxGetField(prhs[0], 0, "point_data_record_length")));
-	m_header.xScaleFactor = *GetDoubles(mxGetField(prhs[0], 0, "scale_factor_x"));
-	m_header.yScaleFactor = *GetDoubles(mxGetField(prhs[0], 0, "scale_factor_y"));
-	m_header.zScaleFactor = *GetDoubles(mxGetField(prhs[0], 0, "scale_factor_z"));
-	m_header.xOffset = *GetDoubles(mxGetField(prhs[0], 0, "x_offset"));
-	m_header.yOffset = *GetDoubles(mxGetField(prhs[0], 0, "y_offset"));
-	m_header.zOffset = *GetDoubles(mxGetField(prhs[0], 0, "z_offset"));
-	m_header.maxX = *GetDoubles(mxGetField(prhs[0], 0, "max_x"));
-	m_header.minX = *GetDoubles(mxGetField(prhs[0], 0, "min_x"));
-	m_header.maxY = *GetDoubles(mxGetField(prhs[0], 0, "max_y"));
-	m_header.minY = *GetDoubles(mxGetField(prhs[0], 0, "min_y"));
-	m_header.maxZ = *GetDoubles(mxGetField(prhs[0], 0, "max_z"));
-	m_header.minZ = *GetDoubles(mxGetField(prhs[0], 0, "min_z"));
+	m_header.PointDataRecordFormat = static_cast<uint8_t>(*GetDoubles(mxGetField(pMxHeader, 0, "point_data_format")));
+	m_header.PointDataRecordLength = static_cast<uint16_t>(*GetDoubles(mxGetField(pMxHeader, 0, "point_data_record_length")));
+	m_header.xScaleFactor = *GetDoubles(mxGetField(pMxHeader, 0, "scale_factor_x"));
+	m_header.yScaleFactor = *GetDoubles(mxGetField(pMxHeader, 0, "scale_factor_y"));
+	m_header.zScaleFactor = *GetDoubles(mxGetField(pMxHeader, 0, "scale_factor_z"));
+	m_header.xOffset = *GetDoubles(mxGetField(pMxHeader, 0, "x_offset"));
+	m_header.yOffset = *GetDoubles(mxGetField(pMxHeader, 0, "y_offset"));
+	m_header.zOffset = *GetDoubles(mxGetField(pMxHeader, 0, "z_offset"));
+	m_header.maxX = *GetDoubles(mxGetField(pMxHeader, 0, "max_x"));
+	m_header.minX = *GetDoubles(mxGetField(pMxHeader, 0, "min_x"));
+	m_header.maxY = *GetDoubles(mxGetField(pMxHeader, 0, "max_y"));
+	m_header.minY = *GetDoubles(mxGetField(pMxHeader, 0, "min_y"));
+	m_header.maxZ = *GetDoubles(mxGetField(pMxHeader, 0, "max_z"));
+	m_header.minZ = *GetDoubles(mxGetField(pMxHeader, 0, "min_z"));
 
 	// Get number of point records
-	m_numberOfPointsToWrite = static_cast<unsigned long long>(*GetDoubles(mxGetField(prhs[0], 0, "number_of_point_records")));
+	m_numberOfPointsToWrite = static_cast<unsigned long long>(*GetDoubles(mxGetField(pMxHeader, 0, "number_of_point_records")));
 
 	if (m_numberOfPointsToWrite < ULONG_MAX) // max is 4294967296
 	{
@@ -179,42 +349,42 @@ bool LasDataWriter::GetHeader(mxArray* prhs[])
 	// Get version exclusive features
 	if (m_header.versionMajor == 1 && m_header.versionMinor < 4)
 	{
-		pMXDouble = GetDoubles(mxGetField(prhs[0], 0, "number_of_points_by_return"));
+		pMXDouble = GetDoubles(mxGetField(pMxHeader, 0, "number_of_points_by_return"));
 		for (int i = 0; i < 5; ++i) { m_header.LegacyNumberOfPointByReturn[i] = static_cast<uint32_t>(pMXDouble[i]); }
 	}
 
 	if (m_header.versionMajor == 1 && m_header.versionMinor > 2)
 	{
-		m_headerExt3.startOfWaveFormData = static_cast<uint64_t>(*GetDoubles(mxGetField(prhs[0], 0, "start_of_waveform_data")));
+		m_headerExt3.startOfWaveFormData = static_cast<uint64_t>(*GetDoubles(mxGetField(pMxHeader, 0, "start_of_waveform_data")));
 	}
 
 	if (m_header.versionMajor == 1 && m_header.versionMinor > 3)
 	{
 		m_headerExt4.numberOfPointRecords = m_numberOfPointsToWrite;
-		m_headerExt4.startOfFirstExtendedVariableLengthRecord = static_cast<uint64_t>(*GetDoubles(mxGetField(prhs[0], 0, "start_of_extended_variable_length_record")));
-		m_headerExt4.startOfFirstExtendedVariableLengthRecord = static_cast<uint64_t>(*GetDoubles(mxGetField(prhs[0], 0, "number_of_extended_variable_length_record")));
+		m_headerExt4.startOfFirstExtendedVariableLengthRecord = static_cast<uint64_t>(*GetDoubles(mxGetField(pMxHeader, 0, "start_of_extended_variable_length_record")));
+		m_headerExt4.startOfFirstExtendedVariableLengthRecord = static_cast<uint64_t>(*GetDoubles(mxGetField(pMxHeader, 0, "number_of_extended_variable_length_record")));
 
-		pMXDouble = GetDoubles(mxGetField(prhs[0], 0, "number_of_points_by_return"));
+		pMXDouble = GetDoubles(mxGetField(pMxHeader, 0, "number_of_points_by_return"));
 		for (int i = 0; i < 15; ++i) { m_headerExt4.numberOfPointsByReturn[i] = static_cast<uint64_t>(pMXDouble[i]); }
 	}
 
 	// Copy system identifier and generating software char by char until null character or end of array is reached
-	pMXChar = GetChars(mxGetField(prhs[0], 0, "system_identifier"));
+	pMXChar = GetChars(mxGetField(pMxHeader, 0, "system_identifier"));
 	for (int i = 0; i < 32; ++i) {
 		char copyChar = static_cast<char>(pMXChar[i]);
 		m_header.systemIdentifier[i] = static_cast<char>(copyChar);
 
-		if (copyChar == '/0') {
+		if (copyChar == 0) {
 			break;
 		}
 	}
 
-	pMXChar = GetChars(mxGetField(prhs[0], 0, "generating_software"));
+	pMXChar = GetChars(mxGetField(pMxHeader, 0, "generating_software"));
 	for (int i = 0; i < 32; ++i) {
 		char copyChar = static_cast<char>(pMXChar[i]);
 		m_header.generatingSoftware[i] = static_cast<char>(copyChar);
 
-		if (copyChar == '/0') {
+		if (copyChar == 0) {
 			break;
 		}
 	}
@@ -222,7 +392,9 @@ bool LasDataWriter::GetHeader(mxArray* prhs[])
 	return true;
 }
 
-bool LasDataWriter::GetData(mxArray* prhs[]) {
+bool LasDataWriter::GetData(const mxArray* const prhs[]) {
+
+	setContentFlags();
 
 	m_mxStructPointer.pX = GetDoubles(mxGetField(prhs[0], 0, "x"));
 	m_mxStructPointer.pY = GetDoubles(mxGetField(prhs[0], 0, "y"));

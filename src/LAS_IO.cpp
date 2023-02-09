@@ -1,3 +1,4 @@
+#pragma once
 #ifndef LAS_IO_H
 #define LAS_IO_H
 
@@ -130,11 +131,22 @@ protected:
 	// Internal Point Data ID because index in PDRF list does not have to coincide with PDRF itself
 	size_t m_internalPointDataRecordID	= -1;
 
-	// Constants
+	// Constants and byte offsets
 	const std::vector<unsigned char> m_supported_record_formats	{ 0,   1,  2,  3,  4,  5,  6,  7,  8,  9, 10 };
 	const std::vector<unsigned char> m_record_lengths			{ 20, 28, 26, 34, 57, 63, 30, 36, 38, 59, 67 };
 
-	void SetInternalRecordFormatID() 
+	const std::vector<unsigned char> m_bits2_Byte			{  0,  0,  0,  0,  0,  0, 15, 15, 15, 15, 15 };	// Byte offset to second bit field
+	const std::vector<unsigned char> m_classification_Byte	{ 15, 15, 15, 15, 15, 15, 16, 16, 16, 16, 16 };	// Byte offset to classification
+	const std::vector<unsigned char> m_scanAngle_Byte		{ 16, 16, 16, 16, 16, 16, 18, 18, 18, 18, 18 };	// Byte offset to scan angle rank
+	const std::vector<unsigned char> m_userData_Byte		{ 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17 };	// Byte offset to user data
+	const std::vector<unsigned char> m_pointSourceID_Byte	{ 18, 18, 18, 18, 18, 18, 20, 20, 20, 20, 20 };	// Byte offset to point source id
+	const std::vector<unsigned char> m_time_Byte			{  0, 20,  0, 20, 20, 20, 22, 22, 22, 22, 22 };	// Byte offset to time
+	const std::vector<unsigned char> m_color_Byte			{  0,  0, 20, 28,  0, 28,  0, 30, 30, 30, 30 };	// Byte offset from point start to red color
+	const std::vector<unsigned char> m_NIR_Byte				{  0,  0,  0,  0,  0,  0,  0,  0, 36,  0, 36 };	// Byte offset to near infrared channel
+	const std::vector<unsigned char> m_wavePackets_Byte		{  0,  0,  0,  0, 28, 30, 34,  0,  0, 30, 38};	// Byte offset to wave packets
+	
+	// Assign the PDRF to an index to retrieve byte offsets for all fields
+	void LAS_IO::SetInternalRecordFormatID()
 	{
 		auto it = find(m_supported_record_formats.begin(), m_supported_record_formats.end(), m_header.PointDataRecordFormat);
 
@@ -147,6 +159,44 @@ protected:
 			m_internalPointDataRecordID = -1;
 		}
 	}
+
+	// Set Flags for colors, time, wave packets, NIR, VLR and extrabytes
+	void LAS_IO::setContentFlags()
+	{
+
+		SetInternalRecordFormatID();
+
+		m_containsTime = false;
+		if (m_time_Byte[m_internalPointDataRecordID] != 0) {
+			m_containsTime = true;
+		}
+
+		m_containsColors = false;
+		if (m_color_Byte[m_internalPointDataRecordID] != 0) {
+			m_containsColors = true;
+		}
+
+		m_containsWavepackets = false;
+		if (m_wavePackets_Byte[m_internalPointDataRecordID] != 0) {
+			m_containsWavepackets = true;
+		}
+
+		m_containsNIR = false;
+		if (m_NIR_Byte[m_internalPointDataRecordID] != 0) {
+			m_containsNIR = true;
+		}
+
+		m_extraByteCount = 0;
+		if (m_internalPointDataRecordID != -1 && m_internalPointDataRecordID < m_record_lengths.size())
+		{
+			if (m_header.PointDataRecordLength > m_record_lengths[m_internalPointDataRecordID])
+			{
+				m_containsExtraBytes = true;
+				m_extraByteCount = m_header.PointDataRecordLength - m_record_lengths[m_internalPointDataRecordID];
+			}
+		}
+	}
+
 };
 
 
@@ -420,9 +470,9 @@ private:
 	const size_t m_record_lengths_size = m_record_lengths.size();
 
 public:
-	bool GetHeader(mxArray* LASstructure[]);
+	bool GetHeader(const mxArray* const matlabInput[]);
 
-	bool GetData(mxArray* LASstructure[]);
+	bool GetData(const mxArray* const matlabInput[]);
 
 	bool WriteLASheader(std::ofstream& lasBin);
 
@@ -432,6 +482,5 @@ public:
 
 	bool WriteLASdata(std::ofstream& lasBin);
 };
-
 
 #endif

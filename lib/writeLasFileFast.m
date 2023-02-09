@@ -29,7 +29,7 @@ function las = writeLasFileFast(las, filename, majorversion, minorversion, point
 MException = []; % Empty Matlab Exception
 record_lengths       = [20, 28, 26, 34, 57, 63, 30, 36, 38, 59, 67];
 LASContainsColor     = [2,3,5,7,8,9,10];
-LASContainsTime      = [0,1,3:10];
+LASContainsTime      = [1,3:10];
 LASContainsNIR       = [8,10];
 LASContainsWavePackets = [4, 5, 9, 10];
 inputIsLegacyLasdata = 0;
@@ -37,21 +37,18 @@ inputIsLegacyLasdata = 0;
 keepCreationDate = 0;
 
 try
-%% Input and header checks
-    % Check LAS header for consistency and modify to fit point data
-    lasHeader = las.header;
-    
+%% Input and header checks    
     % Safe source PDRF for the transformation of bit fields later
-    sourcePDRF = lasHeader.point_data_format;
+    sourcePDRF = las.header.point_data_format;
     
     if nargin > 4
-        lasHeader.point_data_format = pointformat;
+        las.header.point_data_format = pointformat;
     end
     if nargin > 3
-        lasHeader.version_minor = minorversion;
+        las.header.version_minor = minorversion;
     end
     if nargin > 2
-        lasHeader.version_major = majorversion;
+        las.header.version_major = majorversion;
     end
     if nargin == 6
         if isfield(optional, 'keepCreationDate')
@@ -116,7 +113,7 @@ try
        (sourcePDRF > 5 && lasHeader.point_data_format < 6)
    
         % Decode and encode bitfields for specified data format
-        bitfields = decode_bit_fields(lasStruct, optsReturnType);
+        bitfields = decode_bit_fields(las, 'class');
         las = encode_bit_fields(las, bitfields);
     end
 
@@ -126,7 +123,17 @@ try
         las.classification = ZeroPaddingOfField(las, pointCount, 'classification', 'uint8');
     end
     
-    % Scan Angle depending on PDRF
+    % Scan Angle depending on PDRF (can have different data types)
+    if lasHeader.point_data_format > 5
+        if isa(las.scan_angle(1), 'uint8')
+           las.scan_angle = uint16(las.scan_angle);
+        end
+    else
+        if isa(las.scan_angle(1), 'uint16')
+           las.scan_angle = uint8(las.scan_angle);
+        end
+    end
+    
     if length(las.scan_angle) ~= pointCount
         warning('Zero padding of scan angle necessary')
         if lasHeader.point_data_format > 5
@@ -217,8 +224,9 @@ try
         las.extradata = las.extradata';
     end
     
-%% Now finally write the data to drive
-    las = writeLASFile_mex(las, filename);
+%% Now finally write the data to drive after updating the header
+    las.header = lasHeader;
+    writeLasFile_mex(las, filename);
     
 catch MException
 end
@@ -325,7 +333,7 @@ end
 
 % Number of variable length records, point data record length and count
 lasHeader.number_of_variable_records = length(las.variablerecords);
-lasHeader.point_data_record_length = record_lengths(lasHeader.point_data_format);
+lasHeader.point_data_record_length = record_lengths(supportedPDRF == lasHeader.point_data_format);
 lasHeader.number_of_point_records = length(las.x);
 
 % Number of points by return change according to version major
@@ -337,7 +345,7 @@ if lasHeader.version_minor > 3
         lasHeader.number_of_points_by_return = pointsByReturn;
     end
 else
-    lasHeader.number_of_points_by_return = lasHeader.number_of_points_by_return(1:8);
+    lasHeader.number_of_points_by_return = lasHeader.number_of_points_by_return(1:5);
 end
     
 % Scale Factors (Default is 1e-4)
@@ -357,7 +365,7 @@ else
     lasHeader.scale_factor_z = lasHeader.scale_factor_z(1);
 end
 
-if ~any([lasHeader.scale_factor_x, lasHeader.scale_factor_y, lasHeader.scale_factor_z] == 0)
+if any([lasHeader.scale_factor_x, lasHeader.scale_factor_y, lasHeader.scale_factor_z] == 0)
     error('Scale Factor can not be zero');
 end
 

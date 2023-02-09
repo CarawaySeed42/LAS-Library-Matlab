@@ -64,45 +64,26 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 		mexErrMsgIdAndTxt("MEX:writeLASFile_mex:typeargin", "Second argument has to be path to target LAS-File as char array!");
 	}
 
-	/*
-	if (nrhs > 2) {
-		if (!mxIsLogical(prhs[2])) { // is not char array
-			mexErrMsgIdAndTxt("MEX:writeLASFile_mex:typeargin", "Third argument has to be logical!");
-		}
-
-		autodetect = *mxGetLogicals(prhs[2]);
+	if (!mxIsStruct(prhs[0])) {
+		mexErrMsgIdAndTxt("MEX:writeLASFile_mex:typeargin", "First argument has to be a LAS struture!");
 	}
-	*/
 
 	// Get Path from input and open file
 	char* filePath = mxArrayToString(prhs[1]);
 	std::ofstream lasBin(filePath, std::ios::out | std::ios::binary);
 	mxFree(filePath);										// Deallocate memory of path after opening file because it is not needed anymore
 
+
 	if (lasBin.is_open()) {
 		try {
 			// Initialize instance of lasDataWriter class
 			LasDataWriter lasWriter;
 
-			lasWriter.GetData(plhs);
+			lasWriter.GetHeader(prhs);
 			lasWriter.WriteLASheader(lasBin);
 
-			// Read Write point cloud info to header
-			//lasWriter.fillHeader_with_CloudInfo(pcPointer);
-
-			/*if (enforceDataFormat) {
-				lasWriter.PointDataRecordFormat = pointDataFormat;
-			}
-			else {
-				pointDataFormat = lasWriter.determinePointDataFormat(pcPointer);
-				lasWriter.PointDataRecordFormat = pointDataFormat;
-			}
-
-			RhinoApp().SetCommandPromptMessage(L"Write Point Cloud...");
-			RhinoApp().Wait(0);
-
-			lasWriter.writeLasHeader(lasBin);
-			lasWriter.writePointData(lasBin, pcPointer, maxThreadCount);*/
+			lasWriter.GetData(prhs);
+			lasWriter.WriteLASdata(lasBin);
 
 			lasBin.close();
 		}

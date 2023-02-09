@@ -1,6 +1,7 @@
 % This script compiles the readLasFile mex file
 % Can be compiled with Microsoft Visual C++ 2019 (and likely newer)
 % and latest MinGW-w64 Compiler. Tested on Windows 10 x64 platform!
+% C++11 is minimum requirement!
 % Other compilers will probably work but have not been tested.
 % For available compilers enter the folling into the matlab command window:
 %   mex -setup cpp
