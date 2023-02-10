@@ -1,4 +1,4 @@
-% This script compiles the readLasFile mex file
+% This script compiles the writeLasFile mex file
 % Can be compiled with Microsoft Visual C++ 2019 (and likely newer)
 % and latest MinGW-w64 Compiler. Tested on Windows 10 x64 platform!
 % C++11 is minimum requirement!
@@ -14,7 +14,7 @@
 % The following settings are available which the user is free to change
 %
 % Settings:
-%       outdir    : Output directory of mex file (Default is lib folder)
+%       outdir    : Output directory of mex file (Default is lib/mex folder)
 %       debug     : Set true if debug version should be compiled
 %       UseInterleavedComplexAPI: Set true to compile with Interleaved Complex API
 %       verbose            : Set true to show verbose compilation log
@@ -23,11 +23,11 @@
 %
 % Compilation example:
 % mex -R2018a readLasFile.cpp LAS_IO.cpp LasReader.cpp
-% VariableLengthRecords.cpp LASAlloc.cpp -outdir ../lib
+% VariableLengthRecords.cpp -outdir ../lib/mex
 %
 %% ------------------------------------------------------------------------
 % User Input
-outdir = '../lib';
+outdir = '../lib/mex';
 debug = true;
 UseInterleavedComplexAPI = true;
 verbose = false;
@@ -64,10 +64,10 @@ end
 
 % Print chosen options
 fprintf(1, 'Compiler Input: %s\n', [interleaveOpts, ' ', verboseFlag, ' ', debugFlag, ' ', combinedFlag, ' ', 'writeLasFile_mex.cpp', ' ',...
-           'LAS_IO.cpp', ' ', 'LASWriter.cpp', ' ',  'VariableLengthRecords.cpp', ' ', 'LASAlloc.cpp', ' ',  '-outdir', ' ',  outdir]);
+           'LAS_IO.cpp', ' ', 'LASWriter.cpp', ' ',  'VariableLengthRecords.cpp', ' ',  '-outdir', ' ',  outdir]);
 
 % Compile File
-mex(interleaveOpts, verboseFlag, debugFlag, combinedFlag, 'writeLasFile_mex.cpp', 'LAS_IO.cpp',...
-    'LASWriter.cpp', 'VariableLengthRecords.cpp', 'LASAlloc.cpp', '-outdir', outdir)
+mex(interleaveOpts, verboseFlag, debugFlag, combinedFlag, 'writeLasFile_cpp.cpp', 'LAS_IO.cpp',...
+    'LASWriter.cpp', 'VariableLengthRecords.cpp', '-outdir', outdir)
 
 fprintf('-------------------------------------------------------------\n');

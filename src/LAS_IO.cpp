@@ -82,7 +82,7 @@ protected:
 
 	struct ExtVLRHeader
 	{
-		char				extvlrhBytes[55] = { '\0' };	// 60 Raw Bytes from of variable length record header
+		char				extvlrhBytes[61] = { '\0' };	// 60 Raw Bytes from of variable length record header
 		unsigned short		reserved;						// 2 bytes
 		char				userID[17] = { '\0' };			// 16 bytes
 		unsigned short		recordID;						// 2 bytes
@@ -143,7 +143,7 @@ protected:
 	const std::vector<unsigned char> m_time_Byte			{  0, 20,  0, 20, 20, 20, 22, 22, 22, 22, 22 };	// Byte offset to time
 	const std::vector<unsigned char> m_color_Byte			{  0,  0, 20, 28,  0, 28,  0, 30, 30, 30, 30 };	// Byte offset from point start to red color
 	const std::vector<unsigned char> m_NIR_Byte				{  0,  0,  0,  0,  0,  0,  0,  0, 36,  0, 36 };	// Byte offset to near infrared channel
-	const std::vector<unsigned char> m_wavePackets_Byte		{  0,  0,  0,  0, 28, 30, 34,  0,  0, 30, 38};	// Byte offset to wave packets
+	const std::vector<unsigned char> m_wavePackets_Byte		{  0,  0,  0,  0, 28, 34,  0,  0,  0, 30, 38};	// Byte offset to wave packets
 	
 	// Assign the PDRF to an index to retrieve byte offsets for all fields
 	void LAS_IO::SetInternalRecordFormatID()
@@ -466,8 +466,12 @@ private:
 	// How many points to read? Header info is ambigous due to legacy and LAS 1.4 field
 	unsigned long long m_numberOfPointsToWrite = 0;
 
-	//Record lengths of Point Data Formats according to specifications
+	// Record lengths of Point Data Formats according to specifications
 	const size_t m_record_lengths_size = m_record_lengths.size();
+
+	// Are the Pointers to the neccessary Matlab data valid (Throws Matlab Error if not)
+	void AreSourcePointersValid();
+	void GetVLRData(mxArray* prhs[], size_t VLRindex);
 
 public:
 	bool GetHeader(const mxArray* const matlabInput[]);

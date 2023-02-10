@@ -1,5 +1,8 @@
-function las = writeLasFileFast(las, filename, majorversion, minorversion, pointformat, optional)
-% las = writeLasFileFast(las, filename, majorversion, minorversion, pointformat)
+function las = writeLasFile(las, filename, majorversion, minorversion, pointformat, optional)
+% las = writeLasFile(las, filename, majorversion, minorversion, pointformat)
+%
+%   Supports Versions LAS 1.1 - 1.4
+%   Supports Point Data Record Format 0 to 10
 %
 %   Writes lasdata style struct to a Las-File. This function tries to
 %   compensate for errors in the header and data. Point Count is determined
@@ -100,20 +103,27 @@ try
     
     % Bitfields
     if length(las.bits) ~= pointCount
-        warning('Zero padding of bit values necessary (return nr, scan dir. flag, edge of flight line)')
+        warning('Zero padding of bit values necessary')
         las.bits = ZeroPaddingOfField(las, pointCount, 'bits', 'uint8');
     end
     
     if lasHeader.point_data_format > 5 && isempty(las.bits2)
-        warning('Zero padding of bit values necessary')
+        warning('Zero padding of bit2 values necessary')
         las.bits2 = ZeroPaddingOfField(las, pointCount, 'bits2', 'uint8');
     end
     
-    if (sourcePDRF < 6 && lasHeader.point_data_format > 5) || ...
-       (sourcePDRF > 5 && lasHeader.point_data_format < 6)
-   
+    if (sourcePDRF < 6 && lasHeader.point_data_format > 5)
         % Decode and encode bitfields for specified data format
         bitfields = decode_bit_fields(las, 'class');
+        bitfields.Extend();
+        bitfields.classification_flags = zeros(pointCount, 1, 'uint8');
+        bitfields.scanner_channel = zeros(pointCount, 1, 'uint8');
+        las = encode_bit_fields(las, bitfields);
+        
+    elseif (sourcePDRF > 5 && lasHeader.point_data_format < 6)
+        % Decode and encode bitfields for specified data format
+        bitfields = decode_bit_fields(las, 'class');
+        bitfields.Shorten();
         las = encode_bit_fields(las, bitfields);
     end
 
@@ -125,21 +135,21 @@ try
     
     % Scan Angle depending on PDRF (can have different data types)
     if lasHeader.point_data_format > 5
-        if isa(las.scan_angle(1), 'uint8')
-           las.scan_angle = uint16(las.scan_angle);
+        if isa(las.scan_angle(1), 'int8')
+           las.scan_angle = int16(las.scan_angle);
         end
     else
-        if isa(las.scan_angle(1), 'uint16')
-           las.scan_angle = uint8(las.scan_angle);
+        if isa(las.scan_angle(1), 'int16')
+           las.scan_angle = int8(las.scan_angle);
         end
     end
     
     if length(las.scan_angle) ~= pointCount
         warning('Zero padding of scan angle necessary')
         if lasHeader.point_data_format > 5
-            las.scan_angle = ZeroPaddingOfField(las, pointCount, 'scan_angle', 'uint16');
+            las.scan_angle = ZeroPaddingOfField(las, pointCount, 'scan_angle', 'int16');
         else
-            las.scan_angle = ZeroPaddingOfField(las, pointCount, 'scan_angle', 'uint8');
+            las.scan_angle = ZeroPaddingOfField(las, pointCount, 'scan_angle', 'int8');
         end
     end
     
@@ -166,15 +176,15 @@ try
     % Color
     if any(lasHeader.point_data_format == LASContainsColor)
         if length(las.red) ~= pointCount
-            warning('Zero padding of gps time necessary')
+            warning('Zero padding of Red Channel necessary')
             las.red = ZeroPaddingOfField(las, pointCount, 'red', 'uint16');
         end
         if length(las.green) ~= pointCount
-            warning('Zero padding of gps time necessary')
+            warning('Zero padding of Green Channel necessary')
             las.green = ZeroPaddingOfField(las, pointCount, 'green', 'uint16');
         end
         if length(las.blue) ~= pointCount
-            warning('Zero padding of gps time necessary')
+            warning('Zero padding of Blue Channel necessary')
             las.blue = ZeroPaddingOfField(las, pointCount, 'blue', 'uint16');
         end
     end
@@ -226,7 +236,7 @@ try
     
 %% Now finally write the data to drive after updating the header
     las.header = lasHeader;
-    writeLasFile_mex(las, filename);
+    writeLasFile_cpp(las, filename);
     
 catch MException
 end
@@ -369,7 +379,7 @@ if any([lasHeader.scale_factor_x, lasHeader.scale_factor_y, lasHeader.scale_fact
     error('Scale Factor can not be zero');
 end
 
-% Offsets
+% Coordinate Offsets
 % Should be provided by the user. For different Scenarios, different
 % offsets make sense. So there will be no guesses here, just check if the
 % offsets are there
@@ -409,6 +419,15 @@ if lasHeader.version_minor > 3
         lasHeader.number_of_variable_records = length(las.extendedvariables);
     end
 end
+
+% Offset to point data is header size plus Variable Length Records Length
+% of 54 bytes
+variable_record_bytesize = 0;
+for i = 1:length(las.variablerecords)
+    variable_record_bytesize = variable_record_bytesize + 54 + las.variablerecords(i).record_length;
+end
+
+lasHeader.offset_to_point_data = lasHeader.header_size + variable_record_bytesize;
 
 end
 

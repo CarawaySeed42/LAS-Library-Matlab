@@ -1,8 +1,8 @@
-%==========================================================
-% readLas2Struct.mexw64 - MEX-File
-% lasStruct = readLasFile(lasFilePath)
-% lasStruct = readLasFile(lasFilePath, optsString)
+function lasStruct = readLasFile(lasFilePath, optsString)
+% function lasStruct = readLasFile(lasFilePath)
+% or       lasStruct = readLasFile(lasFilePath, optsString)
 % 
+% Supports Versions LAS 1.1 - 1.4
 % Supports Point Data Record Format 0 to 10. Partially supports other PDRF.
 %
 % Reads LAS-File data with the help of a C++ Mex-File into a lasdata style
@@ -39,3 +39,7 @@
 % Licence: see the included file
 % 
 %========================================================
+if nargin == 1
+    optsString = 'LoadAll'; 
+end
+lasStruct = readLasFile_cpp(char(lasFilePath), optsString);

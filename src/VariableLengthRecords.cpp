@@ -3,6 +3,20 @@
 #include <memory>
 #include "LAS_IO.cpp"
 
+#if MX_HAS_INTERLEAVED_COMPLEX
+
+#define GetUint8	mxGetUint8s
+#define GetUint16	mxGetUint16s
+#define GetUint64	mxGetUint64s
+
+#else
+
+#define GetUint8	(mxUint8*)	mxGetPr
+#define GetUint16	(mxUint16*) mxGetPr
+#define GetUint64	(mxUint64*) mxGetPr
+
+#endif
+
 void LasDataReader::setStreamToVLRHeader(std::ifstream& lasBin)
 {
 	// If end of file was reached during reading then clear bits to allow further reading and seeking for small files
@@ -91,13 +105,8 @@ void LasDataReader::ReadVLR(mxArray* plhs[], std::ifstream& lasBin)
 		// Read VLR Header and write contents to plhs
 		readVLRHeader(lasBin);	
 		
-
 		pMXArray = mxCreateNumericMatrix(1, 1, mxUINT16_CLASS, mxREAL);
-#if MX_HAS_INTERLEAVED_COMPLEX
-		pUINT16 = mxGetUint16s(pMXArray);
-#else
-		pUINT16 = (mxUint16*)mxGetPr(pMXArray);;
-#endif
+		pUINT16 = GetUint16(pMXArray);
 		*pUINT16 = m_VLRHeader.reserved;
 		mxSetField(vlrhStruct, i, "reserved", pMXArray);
 
@@ -105,20 +114,12 @@ void LasDataReader::ReadVLR(mxArray* plhs[], std::ifstream& lasBin)
 		mxSetField(vlrhStruct, i, "user_id", tempMXString);
 
 		pMXArray = mxCreateNumericMatrix(1, 1, mxUINT16_CLASS, mxREAL);
-#if MX_HAS_INTERLEAVED_COMPLEX
-		pUINT16 = mxGetUint16s(pMXArray);
-#else
-		pUINT16 = (mxUint16*)mxGetPr(pMXArray);;
-#endif
+		pUINT16 = GetUint16(pMXArray);
 		*pUINT16 = m_VLRHeader.recordID;
 		mxSetField(vlrhStruct, i, "record_id", pMXArray);
 
 		pMXArray = mxCreateNumericMatrix(1, 1, mxUINT16_CLASS, mxREAL);
-#if MX_HAS_INTERLEAVED_COMPLEX
-		pUINT16 = mxGetUint16s(pMXArray);
-#else
-		pUINT16 = (mxUint16*)mxGetPr(pMXArray);;
-#endif
+		pUINT16 = GetUint16(pMXArray);
 		*pUINT16 = m_VLRHeader.recordLengthAfterHeader;
 		mxSetField(vlrhStruct, i, "record_length", pMXArray);
 
@@ -131,11 +132,7 @@ void LasDataReader::ReadVLR(mxArray* plhs[], std::ifstream& lasBin)
 		lasBin.read(readBuffer, m_VLRHeader.recordLengthAfterHeader);
 
 		pMXArray = mxCreateNumericMatrix(m_VLRHeader.recordLengthAfterHeader, 1,  mxUINT8_CLASS, mxREAL);
-#if MX_HAS_INTERLEAVED_COMPLEX
-		pUINT8 = mxGetUint8s(pMXArray);
-#else
-		pUINT8 = (mxUint8*)mxGetPr(pMXArray);;
-#endif
+		pUINT8 = GetUint8(pMXArray);
 		std::memcpy(pUINT8, readBuffer, m_VLRHeader.recordLengthAfterHeader * sizeof(char));
 		mxSetField(vlrhStruct, i, "data", pMXArray);
 
@@ -149,12 +146,12 @@ void LasDataReader::ReadVLR(mxArray* plhs[], std::ifstream& lasBin)
 
 void LasDataReader::ReadExtVLR(mxArray* plhs[], std::ifstream& lasBin)
 {
-	mxArray* pMXArray;
-	mxArray* tempMXString;
-	mxUint16* pUINT16;
-	mxUint64* pUINT64;
-	mxUint8* pUINT8;
-	mxArray* dataText;
+	mxArray*	pMXArray;
+	mxArray*	tempMXString;
+	mxUint16*	pUINT16;
+	mxUint64*	pUINT64;
+	mxUint8*	pUINT8;
+	mxArray*	dataText;
 
 	setStreamToExtVLRHeader(lasBin);
 	mxArray* extvlrhStruct = createMXExtVLRStruct(plhs);
@@ -165,11 +162,7 @@ void LasDataReader::ReadExtVLR(mxArray* plhs[], std::ifstream& lasBin)
 		readExtVLRHeader(lasBin);
 
 		pMXArray = mxCreateNumericMatrix(1, 1, mxUINT16_CLASS, mxREAL);
-#if MX_HAS_INTERLEAVED_COMPLEX
-		pUINT16 = mxGetUint16s(pMXArray);
-#else
-		pUINT16 = (mxUint16*)mxGetPr(pMXArray);;
-#endif
+		pUINT16 = GetUint16(pMXArray);
 		*pUINT16 = m_ExtVLRHeader.reserved;
 		mxSetField(extvlrhStruct, i, "reserved", pMXArray);
 
@@ -177,20 +170,12 @@ void LasDataReader::ReadExtVLR(mxArray* plhs[], std::ifstream& lasBin)
 		mxSetField(extvlrhStruct, i, "user_id", tempMXString);
 
 		pMXArray = mxCreateNumericMatrix(1, 1, mxUINT16_CLASS, mxREAL);
-#if MX_HAS_INTERLEAVED_COMPLEX
-		pUINT16 = mxGetUint16s(pMXArray);
-#else
-		pUINT16 = (mxUint16*)mxGetPr(pMXArray);;
-#endif
+		pUINT16 = GetUint16(pMXArray);
 		*pUINT16 = m_ExtVLRHeader.recordID;
 		mxSetField(extvlrhStruct, i, "record_id", pMXArray);
 
 		pMXArray = mxCreateNumericMatrix(1, 1, mxUINT64_CLASS, mxREAL);
-#if MX_HAS_INTERLEAVED_COMPLEX
-		pUINT64 = mxGetUint64s(pMXArray);
-#else
-		pUINT64 = (mxUint64*)mxGetPr(pMXArray);;
-#endif
+		pUINT64 = GetUint64(pMXArray);
 		*pUINT64 = m_ExtVLRHeader.recordLengthAfterHeader;
 		mxSetField(extvlrhStruct, i, "record_length", pMXArray);
 
@@ -203,11 +188,7 @@ void LasDataReader::ReadExtVLR(mxArray* plhs[], std::ifstream& lasBin)
 		lasBin.read(readBuffer, m_ExtVLRHeader.recordLengthAfterHeader);
 
 		pMXArray = mxCreateNumericMatrix(m_ExtVLRHeader.recordLengthAfterHeader, 1,  mxUINT8_CLASS, mxREAL);
-#if MX_HAS_INTERLEAVED_COMPLEX
-		pUINT8 = mxGetUint8s(pMXArray);
-#else
-		pUINT8 = (mxUint8*)mxGetPr(pMXArray);;
-#endif
+		pUINT8 = GetUint8(pMXArray);
 		std::memcpy(pUINT8, readBuffer, m_ExtVLRHeader.recordLengthAfterHeader);
 		mxSetField(extvlrhStruct, i, "data", pMXArray);
 
@@ -217,4 +198,8 @@ void LasDataReader::ReadExtVLR(mxArray* plhs[], std::ifstream& lasBin)
 		for (int j = 0; j < m_ExtVLRHeader.recordLengthAfterHeader; ++j) { pDataText[j] = readBuffer[j]; }
 		mxSetField(extvlrhStruct, i, "data_as_text", dataText);
 	}
+}
+
+void LasDataWriter::GetVLRData(mxArray* plhs[], size_t VLRindex) {
+
 }

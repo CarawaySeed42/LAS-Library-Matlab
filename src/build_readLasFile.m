@@ -14,7 +14,7 @@
 % The following settings are available which the user is free to change
 %
 % Settings:
-%       outdir    : Output directory of mex file (Default is lib folder)
+%       outdir    : Output directory of mex file (Default is lib/mex folder)
 %       debug     : Set true if debug version should be compiled
 %       UseInterleavedComplexAPI: Set true to compile with Interleaved Complex API
 %       verbose            : Set true to show verbose compilation log
@@ -23,11 +23,11 @@
 %
 % Compilation example:
 % mex -R2018a readLasFile.cpp LAS_IO.cpp LasReader.cpp
-% VariableLengthRecords.cpp LASAlloc.cpp -outdir ../lib
+% VariableLengthRecords.cpp LASAlloc.cpp -outdir ../lib/mex
 %
 %% ------------------------------------------------------------------------
 % User Input
-outdir = '../lib';
+outdir = '../lib/mex';
 debug = false;
 UseInterleavedComplexAPI = true;
 verbose = false;
@@ -67,7 +67,7 @@ fprintf(1, 'Compiler Input: %s\n', [interleaveOpts, ' ', verboseFlag, ' ', debug
            'LAS_IO.cpp', ' ', 'LasReader.cpp', ' ',  'VariableLengthRecords.cpp', ' ', 'LASAlloc.cpp', ' ',  '-outdir', ' ',  outdir]);
 
 % Compile File
-mex(interleaveOpts, verboseFlag, debugFlag, combinedFlag, 'readLasFile.cpp', 'LAS_IO.cpp',...
+mex(interleaveOpts, verboseFlag, debugFlag, combinedFlag, 'readLasFile_cpp.cpp', 'LAS_IO.cpp',...
     'LasReader.cpp', 'VariableLengthRecords.cpp', 'LASAlloc.cpp', '-outdir', outdir)
 
 fprintf('-------------------------------------------------------------\n');

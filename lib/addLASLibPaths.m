@@ -12,7 +12,8 @@ if ~isdeployed
     
     addpath(path);
     addpath(fullfile(path,'/classes'));
-    addpath(fullfile(path,'/writer'));
+    addpath(fullfile(path,'/mex'));
+%     addpath(fullfile(path,'/lasdata_port'));
 end
 end
 
