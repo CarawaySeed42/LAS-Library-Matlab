@@ -82,8 +82,17 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 			lasWriter.GetHeader(prhs);
 			lasWriter.WriteLASheader(lasBin);
 
+			if (lasWriter.HasVLR()) {
+				lasWriter.WriteVLR(lasBin, prhs);
+			}
+				
 			lasWriter.GetData(prhs);
 			lasWriter.WriteLASdata(lasBin);
+
+			if (lasWriter.HasExtVLR())
+			{
+				lasWriter.WriteExtVLR(lasBin, prhs);
+			}
 
 			lasBin.close();
 		}

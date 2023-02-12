@@ -24,13 +24,14 @@ function las = writeLasFile(las, filename, majorversion, minorversion, pointform
 %           keepCreationDate : If true then the file creation info from
 %                              header is kept, if False then current date
 %                              is used
+%           useLegacy        : If field is present then Legacy writer from 
+%                              the lasdata class will be used
 %
 %   Returns:
 %       las [struct]        : Struct containing the written cloud data
 %
 
 MException = []; % Empty Matlab Exception
-record_lengths       = [20, 28, 26, 34, 57, 63, 30, 36, 38, 59, 67];
 LASContainsColor     = [2,3,5,7,8,9,10];
 LASContainsTime      = [1,3:10];
 LASContainsNIR       = [8,10];
@@ -56,6 +57,10 @@ try
     if nargin == 6
         if isfield(optional, 'keepCreationDate')
             keepCreationDate = optional.keepCreationDate;
+        end
+        if isfield(optional, 'useLegacy')
+            las = writeLasFile_lasdata(las, filename, majorversion, minorversion, pointformat);
+            return;
         end
     end
     if nargin < 2
@@ -234,20 +239,23 @@ try
         las.extradata = las.extradata';
     end
     
-%% Now finally write the data to drive after updating the header
+    % Update Header
     las.header = lasHeader;
+    
+    % Check types because Interleaved Complex getter return nullptr on
+    % wrong type
+    las = checkFieldTypes(las);
+    
+    % Check variable records for typing and array lengths
+    las = checkVariableRecords(las);
+    
+    
+%% Now finally write the data to drive
     writeLasFile_cpp(las, filename);
     
 catch MException
 end
 
-% % Close all opened file IDs because at least one is never closed
-% h_las=fopen('all');
-% for h=1:length(h_las)
-%     if strcmp(fopen(h_las(h)),filename)
-%         fclose(h_las(h));
-%     end
-% end
 
 % If Exception was thrown then throw it again after all files are closed
 if ~isempty(MException)
@@ -325,6 +333,20 @@ if ~any(lasHeader.point_data_format == supportedPDRF)
     error('Point Data Record Format must be a value between 0 and 10')
 end
 
+% Turn System identifier and Generating Software to a valid zero terminated
+% char array
+lasHeader.system_identifier = zeroTerminateString(lasHeader.system_identifier, 32);
+%terminatedArray = zeros(1,33, 'uint8');
+%char_array_length = min([length(las.header.system_identifier), 32]);
+%terminatedArray(1:char_array_length) = uint16(las.header.system_identifier(1:char_array_length));
+%las.header.system_identifier = char(terminatedArray);
+
+%terminatedArray = zeros(1,33, 'uint8');
+lasHeader.generating_software = zeroTerminateString(lasHeader.generating_software, 32);
+%char_array_length = min([length(las.header.generating_software), 32]);
+%terminatedArray(1:char_array_length) = uint16(las.header.generating_software(1:char_array_length));
+%las.header.generating_software = char(terminatedArray);
+
 % Get date if argument set or fields are missing in the first place
 if ~keepCreationDate || ~isfield(lasHeader, 'file_creation_day_of_year') || ~isfield(lasHeader, 'file_creation_year')
     dateStruct = GetCreationDate();
@@ -345,6 +367,10 @@ end
 lasHeader.number_of_variable_records = length(las.variablerecords);
 lasHeader.point_data_record_length = record_lengths(supportedPDRF == lasHeader.point_data_format);
 lasHeader.number_of_point_records = length(las.x);
+
+if ~isempty(las.extradata)
+    lasHeader.point_data_record_length = lasHeader.point_data_record_length + size(las.extradata, 1);
+end
 
 % Number of points by return change according to version major
 pointsByReturnCount = length(lasHeader.number_of_points_by_return);
@@ -405,6 +431,16 @@ lasHeader.min_y = min(las.y);
 lasHeader.max_z = max(las.z);
 lasHeader.min_z = min(las.z);
 
+% Offset to point data is header size plus Variable Length Records Length
+% of 54 bytes plus the VLR itself
+variable_record_bytesize = 0;
+for i = 1:length(las.variablerecords)
+    variable_record_bytesize = variable_record_bytesize + 54 + las.variablerecords(i).record_length;
+end
+
+lasHeader.offset_to_point_data = double(lasHeader.header_size) + double(variable_record_bytesize);
+
+% Version exclusive fields
 if lasHeader.version_minor > 2
 	if ~isfield(lasHeader,'start_of_waveform_data')
 		lasHeader.start_of_waveform_data = 0;
@@ -415,20 +451,132 @@ if lasHeader.version_minor > 2
 end
 
 if lasHeader.version_minor > 3
+    if ~isfield(lasHeader,'start_of_extended_variable_length_record')
+        extendedStart = lasHeader.number_of_point_records *...
+            lasHeader.point_data_record_length + lasHeader.offset_to_point_data;
+        if ~isempty(las.extendedvariables)
+            lasHeader.start_of_extended_variable_length_record = extendedStart;
+        end
+    end
     if ~isfield(lasHeader,'number_of_extended_variable_length_record')
-        lasHeader.number_of_variable_records = length(las.extendedvariables);
+        lasHeader.number_of_extended_variable_length_record = length(las.extendedvariables);
     end
 end
 
-% Offset to point data is header size plus Variable Length Records Length
-% of 54 bytes
-variable_record_bytesize = 0;
-for i = 1:length(las.variablerecords)
-    variable_record_bytesize = variable_record_bytesize + 54 + las.variablerecords(i).record_length;
 end
 
-lasHeader.offset_to_point_data = lasHeader.header_size + variable_record_bytesize;
+function las = checkFieldTypes(las)
 
+% Check header
+headerFields = fieldnames(las.header);
+for k=1:numel(headerFields)
+    if( isnumeric(las.header.(headerFields{k})) )
+        if ~isa(las.header.(headerFields{k}), 'double')
+            las.header.(headerFields{k}) = double(las.header.(headerFields{k}));
+        end
+    end
+end
+
+end
+
+function las = checkVariableRecords(las)
+
+if ~isempty(las.variablerecords)
+    for i = 1:length(las.variablerecords)
+        
+        % Check Datatypes
+        if ~isa(las.variablerecords(i).reserved,'uint16')
+            las.variablerecords(i).reserved = uint16(las.variablerecords(i).reserved);
+        end
+        if ~isa(las.variablerecords(i).record_id,'uint16')
+            las.variablerecords(i).record_id = uint16(las.variablerecords(i).record_id);
+        end
+        if ~isa(las.variablerecords(i).record_length,'uint16')
+            las.variablerecords(i).record_length = uint16(las.variablerecords(i).record_length);
+        end
+        if ~isa(las.variablerecords(i).data,'uint8')
+            las.variablerecords(i).data = uint8(las.variablerecords(i).data);
+        end
+        if ~isa(las.variablerecords(i).user_id,'char')
+            las.variablerecords(i).user_id = char(las.variablerecords(i).user_id);
+        end
+        if ~isa(las.variablerecords(i).description,'char')
+            las.variablerecords(i).description = char(las.variablerecords(i).description);
+        end
+        
+        % Properly size char fields
+        if length(las.variablerecords(i).user_id) < 16
+            las.variablerecords(i).user_id = zeroTerminateString(las.variablerecords(i).user_id, 16);
+        end
+        if length(las.variablerecords(i).description) < 32
+            las.variablerecords(i).description = zeroTerminateString(las.variablerecords(i).description, 32);
+        end
+        
+        % Check data field count and change record_length according to
+        % actual data
+        if las.variablerecords(i).record_length ~= length(las.variablerecords(i).data)
+            las.variablerecords(i).record_length = uint16(length(las.variablerecords(i).data));
+        end
+    end
+end
+
+record_lengths_sum = 0;
+waveform_EVLR_found = false;
+
+if ~isempty(las.extendedvariables)
+    for i = 1:length(las.extendedvariables)
+        % Check Datatypes
+        if ~isa(las.extendedvariables(i).reserved,'uint16')
+            las.extendedvariables(i).reserved = uint16(las.extendedvariables(i).reserved);
+        end
+        if ~isa(las.extendedvariables(i).record_id,'uint16')
+            las.extendedvariables(i).record_id = uint16(las.extendedvariables(i).record_id);
+        end
+        if ~isa(las.extendedvariables(i).record_length,'uint64')
+            las.extendedvariables(i).record_length = uint64(las.extendedvariables(i).record_length);
+        end
+        if ~isa(las.extendedvariables(i).data,'uint8')
+            las.extendedvariables(i).data = uint8(las.extendedvariables(i).data);
+        end
+        if ~isa(las.extendedvariables(i).user_id,'char')
+            las.extendedvariables(i).user_id = char(las.extendedvariables(i).user_id);
+        end
+        if ~isa(las.extendedvariables(i).description,'char')
+            las.extendedvariables(i).description = char(las.extendedvariables(i).description);
+        end
+        
+        % Properly size char fields
+        if length(las.extendedvariables(i).user_id) < 16
+            las.extendedvariables(i).user_id = zeroTerminateString(las.extendedvariables(i).user_id, 16);
+        end
+        if length(las.extendedvariables(i).description) < 32
+            las.extendedvariables(i).description = zeroTerminateString(las.extendedvariables(i).description, 32);
+        end
+        
+        % Check data field count and change record_length according to
+        % actual data
+        if las.extendedvariables(i).record_length ~= length(las.extendedvariables(i).data)
+            las.extendedvariables(i).record_length = uint64(length(las.extendedvariables(i).data));
+        end
+        
+        % Check for waveform data and then set start of waveform data if
+        % EVLR with Waveform record id is found
+        if las.extendedvariables(i).record_id == 65535 && ~waveform_EVLR_found
+            las.header.start_of_waveform_data = las.header.start_of_extended_variable_length_record + record_lengths_sum;
+            waveform_EVLR_found = true;
+        end
+        
+        record_lengths_sum = record_lengths_sum + las.extendedvariables(i).record_length + 60;
+    end
+end
+
+end
+
+function stringOutput = zeroTerminateString(stringInput, strlength)
+terminatedArray = zeros(1,strlength+1, 'uint8');
+char_array_length = min([length(stringInput), strlength]);
+terminatedArray(1:char_array_length) = uint8(stringInput(1:char_array_length));
+stringOutput = char(terminatedArray);
 end
 
 function zeroPaddedField = ZeroPaddingOfField(structure, count, fieldname, datatype)

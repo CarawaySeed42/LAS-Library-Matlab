@@ -1,4 +1,4 @@
-function obj = writeLasFile(obj, filename, majorversion, minorversion, pointformat)
+function obj = writeLasFile_lasdata(obj, filename, majorversion, minorversion, pointformat)
 % obj = writeLasFile(obj, filename, majorversion, minorversion, pointformat)
 %
 %   Writes lasdata style struct to a Las-File. This is a port of the
@@ -58,7 +58,6 @@ try
     %         if strcmpi(orgfile,newfile)
     %             error('Overwriting is not allowed.')
     %         end
-    
     
     % Create output directory if doesn't exist (isdir for backwards comp)
     [pathtmp,~,ext]=fileparts(filename);

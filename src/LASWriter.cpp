@@ -55,15 +55,7 @@ bool LasDataWriter::WriteLASheader(std::ofstream& lasBin)
 	// Go to start of file
 	lasBin.seekp(0, lasBin.beg);
 
-	// Get current year and day of year for write
-	/*time_t theTime = time(NULL);
-	struct tm aTime;
-	localtime_s(&aTime, &theTime);
-	FileCreationYear = (unsigned short)aTime.tm_year + 1900; // Year is # years since 1900
-	FileCreationDayOfYear = (unsigned short)aTime.tm_yday;
-	*/
-
-	// Write every single 
+	// Write every single header entry
 	char FileSignature[] = "LASF";
 	std::strcpy(m_header.fileSignature, FileSignature);
 
@@ -128,14 +120,14 @@ bool LasDataWriter::WriteLASheader(std::ofstream& lasBin)
 		mexWarnMsgIdAndTxt("MEX:WriteLASheader:invalid_streampos", "Streamposition after writing the header diverges from the reference!\n Error will be corrected!");
 		lasBin.seekp(94, lasBin.beg);
 
-		// Correct header size and offset o point data because it will be shifted as well
+		// Correct header size and offset to point data because it will be shifted as well
 		long diffHeaderSizes = static_cast<long>(currentStreampos) - static_cast<long>(m_header.headerSize);
 		m_header.headerSize = static_cast<unsigned short>(currentStreampos);
 		m_header.offsetToPointData = static_cast<unsigned long>(static_cast<long>(m_header.offsetToPointData) + diffHeaderSizes);
 
 		lasBin.write((char*)&m_header.headerSize, sizeof(unsigned short));
+		lasBin.write((char*)&m_header.offsetToPointData, sizeof(unsigned long));
 		lasBin.seekp(currentStreampos, lasBin.beg);
-		return false;
 	}
 
 	SetInternalRecordFormatID();
@@ -374,7 +366,7 @@ bool LasDataWriter::GetHeader(const mxArray* const prhs[])
 	{
 		m_headerExt4.numberOfPointRecords = m_numberOfPointsToWrite;
 		m_headerExt4.startOfFirstExtendedVariableLengthRecord = static_cast<uint64_t>(*GetDoubles(mxGetField(pMxHeader, 0, "start_of_extended_variable_length_record")));
-		m_headerExt4.startOfFirstExtendedVariableLengthRecord = static_cast<uint64_t>(*GetDoubles(mxGetField(pMxHeader, 0, "number_of_extended_variable_length_record")));
+		m_headerExt4.numberOfExtendedVariableLengthRecords = static_cast<uint64_t>(*GetDoubles(mxGetField(pMxHeader, 0, "number_of_extended_variable_length_record")));
 
 		pMXDouble = GetDoubles(mxGetField(pMxHeader, 0, "number_of_points_by_return"));
 		for (int i = 0; i < 15; ++i) { m_headerExt4.numberOfPointsByReturn[i] = static_cast<uint64_t>(pMXDouble[i]); }
@@ -382,22 +374,28 @@ bool LasDataWriter::GetHeader(const mxArray* const prhs[])
 
 	// Copy system identifier and generating software char by char until null character or end of array is reached
 	pMXChar = GetChars(mxGetField(pMxHeader, 0, "system_identifier"));
-	for (int i = 0; i < 32; ++i) {
-		char copyChar = static_cast<char>(pMXChar[i]);
-		m_header.systemIdentifier[i] = static_cast<char>(copyChar);
 
-		if (copyChar == 0) {
-			break;
+	if (nullptr != pMXChar) {
+		for (int i = 0; i < 32; ++i) {
+			char copyChar = static_cast<char>(pMXChar[i]);
+			if (copyChar == 0) {
+				break;
+			}
+
+			m_header.systemIdentifier[i] = static_cast<char>(copyChar);
 		}
 	}
-
+	
 	pMXChar = GetChars(mxGetField(pMxHeader, 0, "generating_software"));
-	for (int i = 0; i < 32; ++i) {
-		char copyChar = static_cast<char>(pMXChar[i]);
-		m_header.generatingSoftware[i] = static_cast<char>(copyChar);
 
-		if (copyChar == 0) {
-			break;
+	if (nullptr != pMXChar) {
+		for (int i = 0; i < 32; ++i) {
+			char copyChar = static_cast<char>(pMXChar[i]);
+			if (copyChar == 0) {
+				break;
+			}
+
+			m_header.generatingSoftware[i] = static_cast<char>(copyChar);
 		}
 	}
 
@@ -565,5 +563,19 @@ void LasDataWriter::AreSourcePointersValid()
 		if (nullptr == m_mxStructPointer.pExtraBytes) {
 			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Extrabytes invalid!");
 		}
+	}
+}
+
+void LasDataWriter::SetCurrentStreamPosAsDataOffset(std::ofstream& lasBin)
+{
+	std::streampos currentStreampos = lasBin.tellp();
+
+	if (static_cast<unsigned short>(currentStreampos) != m_header.offsetToPointData)
+	{
+		mexWarnMsgIdAndTxt("MEX:SetCurrentStreamPosAsOffset:new_streampos", "Offset to Point Data was Updated!");
+		lasBin.seekp(96, lasBin.beg);
+		m_header.offsetToPointData = static_cast<unsigned long>(currentStreampos);
+		lasBin.write((char*)&m_header.offsetToPointData, sizeof(unsigned long));
+		lasBin.seekp(currentStreampos, lasBin.beg);
 	}
 }

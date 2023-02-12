@@ -5,12 +5,14 @@
 
 #if MX_HAS_INTERLEAVED_COMPLEX
 
+#define GetChars	mxGetChars
 #define GetUint8	mxGetUint8s
 #define GetUint16	mxGetUint16s
 #define GetUint64	mxGetUint64s
 
 #else
 
+#define GetChars	(mxChar*)	mxGetPr
 #define GetUint8	(mxUint8*)	mxGetPr
 #define GetUint16	(mxUint16*) mxGetPr
 #define GetUint64	(mxUint64*) mxGetPr
@@ -35,11 +37,11 @@ void LasDataReader::setStreamToExtVLRHeader(std::ifstream& lasBin)
 	lasBin.seekg(m_headerExt4.startOfFirstExtendedVariableLengthRecord, lasBin.beg);
 }
 
-bool LasDataReader::HasVLR() {
+bool LAS_IO::HasVLR() {
 	return m_header.numberOfVariableLengthRecords > 0;
 }
 
-bool LasDataReader::HasExtVLR() {
+bool LAS_IO::HasExtVLR() {
 	return m_headerExt4.numberOfExtendedVariableLengthRecords > 0;
 }
 
@@ -200,6 +202,127 @@ void LasDataReader::ReadExtVLR(mxArray* plhs[], std::ifstream& lasBin)
 	}
 }
 
-void LasDataWriter::GetVLRData(mxArray* plhs[], size_t VLRindex) {
 
+void LasDataWriter::GetVLRHeader(mxArray pVLRfield[], size_t VLRindex) {
+
+	mxChar* pMXChar;
+
+	m_VLRHeader.reserved = static_cast<unsigned short>(*GetUint16(mxGetField(pVLRfield, VLRindex, "reserved")));
+	m_VLRHeader.recordID = static_cast<unsigned short>(*GetUint16(mxGetField(pVLRfield, VLRindex, "record_id")));
+	m_VLRHeader.recordLengthAfterHeader = static_cast<unsigned short>(*GetUint16(mxGetField(pVLRfield, (mwIndex)VLRindex, "record_length")));
+
+	// User_id and Description are char arrays
+	pMXChar = GetChars(mxGetField(pVLRfield, (mwIndex)VLRindex, "user_id"));
+	if (nullptr != pMXChar) {
+		for (int i = 0; i < 16; ++i) {
+			char copyChar = static_cast<char>(pMXChar[i]);
+			if (copyChar == 0) {
+				break;
+			}
+
+			m_VLRHeader.userID[i] = static_cast<char>(copyChar);
+		}
+	}
+
+	pMXChar = GetChars(mxGetField(pVLRfield, (mwIndex)VLRindex, "description"));
+	if (nullptr != pMXChar) {
+		for (int i = 0; i < 32; ++i) {
+			char copyChar = static_cast<char>(pMXChar[i]);
+			if (copyChar == 0) {
+				break;
+			}
+
+			m_VLRHeader.description[i] = static_cast<char>(copyChar);
+		}
+	}
+
+	// Get header in single char array as it will be written
+	std::memcpy(m_VLRHeader.vlrhBytes,      &m_VLRHeader.reserved,  2 * sizeof(char));
+	std::memcpy(m_VLRHeader.vlrhBytes +  2, &m_VLRHeader.userID,   16 * sizeof(char));
+	std::memcpy(m_VLRHeader.vlrhBytes + 18, &m_VLRHeader.recordID,  2 * sizeof(char));
+	std::memcpy(m_VLRHeader.vlrhBytes + 20, &m_VLRHeader.recordLengthAfterHeader, 2 * sizeof(char));
+	std::memcpy(m_VLRHeader.vlrhBytes + 22, &m_VLRHeader.description, 32 * sizeof(char));
+}
+
+bool LasDataWriter::WriteVLR(std::ofstream& lasBin, const mxArray* matlabInput[])
+{
+	mxArray* pVLRfield = mxGetField(matlabInput[0], 0, "variablerecords");
+
+	for (size_t i = 0; i < m_header.numberOfVariableLengthRecords; ++i) {
+
+		// Get header, write header, then write data
+		GetVLRHeader(pVLRfield, i);
+		lasBin.write(m_VLRHeader.vlrhBytes, 54);
+
+		// Get and write data
+		if (m_VLRHeader.recordLengthAfterHeader > 0) {
+			mxUint8* dataPointer = GetUint8(mxGetField(pVLRfield, i, "data"));
+			lasBin.write((char*)dataPointer, m_VLRHeader.recordLengthAfterHeader);
+		}
+	}
+
+	SetCurrentStreamPosAsDataOffset(lasBin);
+
+	return true;
+}
+
+void LasDataWriter::GetExtVLRHeader(mxArray pVLRfield[], size_t VLRindex) {
+
+	mxChar* pMXChar;
+
+	m_ExtVLRHeader.reserved = static_cast<unsigned short>(*GetUint16(mxGetField(pVLRfield, VLRindex, "reserved")));
+	m_ExtVLRHeader.recordID = static_cast<unsigned short>(*GetUint16(mxGetField(pVLRfield, VLRindex, "record_id")));
+	m_ExtVLRHeader.recordLengthAfterHeader = static_cast<unsigned long long>(*GetUint64(mxGetField(pVLRfield, (mwIndex)VLRindex, "record_length")));
+
+	// User_id and Description are char arrays
+	pMXChar = GetChars(mxGetField(pVLRfield, (mwIndex)VLRindex, "user_id"));
+	if (nullptr != pMXChar) {
+		for (int i = 0; i < 16; ++i) {
+			char copyChar = static_cast<char>(pMXChar[i]);
+			if (copyChar == 0) {
+				break;
+			}
+
+			m_ExtVLRHeader.userID[i] = static_cast<char>(copyChar);
+		}
+	}
+
+	pMXChar = GetChars(mxGetField(pVLRfield, (mwIndex)VLRindex, "description"));
+	if (nullptr != pMXChar) {
+		for (int i = 0; i < 32; ++i) {
+			char copyChar = static_cast<char>(pMXChar[i]);
+			if (copyChar == 0) {
+				break;
+			}
+
+			m_ExtVLRHeader.description[i] = static_cast<char>(copyChar);
+		}
+	}
+
+	// Get header in single char array as it will be written
+	std::memcpy(m_ExtVLRHeader.extvlrhBytes, &m_ExtVLRHeader.reserved, 2 * sizeof(char));
+	std::memcpy(m_ExtVLRHeader.extvlrhBytes + 2, &m_ExtVLRHeader.userID, 16 * sizeof(char));
+	std::memcpy(m_ExtVLRHeader.extvlrhBytes + 18, &m_ExtVLRHeader.recordID, 2 * sizeof(char));
+	std::memcpy(m_ExtVLRHeader.extvlrhBytes + 20, &m_ExtVLRHeader.recordLengthAfterHeader, 8 * sizeof(char));
+	std::memcpy(m_ExtVLRHeader.extvlrhBytes + 28, &m_ExtVLRHeader.description, 32 * sizeof(char));
+}
+
+bool LasDataWriter::WriteExtVLR(std::ofstream& lasBin, const mxArray* matlabInput[])
+{
+	mxArray* pVLRfield = mxGetField(matlabInput[0], 0, "extendedvariables");
+
+	for (size_t i = 0; i < m_header.numberOfVariableLengthRecords; ++i) {
+
+		// Get header, write header, then write data
+		GetExtVLRHeader(pVLRfield, i);
+		lasBin.write(m_ExtVLRHeader.extvlrhBytes, 54);
+
+		// Get and write data
+		if (m_VLRHeader.recordLengthAfterHeader > 0) {
+			mxUint8* dataPointer = GetUint8(mxGetField(pVLRfield, i, "data"));
+			lasBin.write((char*)dataPointer, m_ExtVLRHeader.recordLengthAfterHeader);
+		}
+	}
+
+	return true;
 }

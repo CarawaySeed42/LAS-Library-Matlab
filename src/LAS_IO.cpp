@@ -146,7 +146,7 @@ protected:
 	const std::vector<unsigned char> m_wavePackets_Byte		{  0,  0,  0,  0, 28, 34,  0,  0,  0, 30, 38};	// Byte offset to wave packets
 	
 	// Assign the PDRF to an index to retrieve byte offsets for all fields
-	void LAS_IO::SetInternalRecordFormatID()
+	void SetInternalRecordFormatID()
 	{
 		auto it = find(m_supported_record_formats.begin(), m_supported_record_formats.end(), m_header.PointDataRecordFormat);
 
@@ -161,7 +161,7 @@ protected:
 	}
 
 	// Set Flags for colors, time, wave packets, NIR, VLR and extrabytes
-	void LAS_IO::setContentFlags()
+	void setContentFlags()
 	{
 
 		SetInternalRecordFormatID();
@@ -196,6 +196,19 @@ protected:
 			}
 		}
 	}
+
+public:
+	/// <summary>
+	/// Returns true if LAS-File has variable length records and false if not
+	/// </summary>
+	/// <returns>hasVLR: Does the LAS-File have VLR?</returns>
+	bool HasVLR();
+
+	/// <summary>
+	/// Returns true if LAS-File has extended variable length records and false if not
+	/// </summary>
+	/// <returns>hasVLR: Does the LAS-File have ExtVLR?</returns>
+	bool HasExtVLR();
 
 };
 
@@ -290,18 +303,6 @@ public:
 	/// </summary>
 	/// <param name="lasBin"></param>
 	void FillStructHeader(std::ifstream& lasBin);
-
-	/// <summary>
-	/// Returns true if LAS-File has variable length records and false if not
-	/// </summary>
-	/// <returns>hasVLR: Does the LAS-File have VLR?</returns>
-	bool HasVLR();
-
-	/// <summary>
-	/// Returns true if LAS-File has extended variable length records and false if not
-	/// </summary>
-	/// <returns>hasVLR: Does the LAS-File have ExtVLR?</returns>
-	bool HasExtVLR();
 
 	/// <summary>
 	/// Reads every Variable Length Record from file and writes it to matlab output struct
@@ -471,7 +472,12 @@ private:
 
 	// Are the Pointers to the neccessary Matlab data valid (Throws Matlab Error if not)
 	void AreSourcePointersValid();
-	void GetVLRData(mxArray* prhs[], size_t VLRindex);
+
+	void SetCurrentStreamPosAsDataOffset(std::ofstream& lasBin);
+
+	void GetVLRHeader(mxArray* pVLRfield, size_t VLRindex);
+
+	void GetExtVLRHeader(mxArray* pVLRfield, size_t VLRindex);
 
 public:
 	bool GetHeader(const mxArray* const matlabInput[]);
@@ -480,9 +486,9 @@ public:
 
 	bool WriteLASheader(std::ofstream& lasBin);
 
-	bool WriteVLR(std::ofstream& lasBin);
+	bool WriteVLR(std::ofstream& lasBin, const mxArray* matlabInput[]);
 
-	bool WriteExtVLR(std::ofstream& lasBin);
+	bool WriteExtVLR(std::ofstream& lasBin, const mxArray* matlabInput[]);
 
 	bool WriteLASdata(std::ofstream& lasBin);
 };
