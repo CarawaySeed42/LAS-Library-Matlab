@@ -51,13 +51,13 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 
 	/* Check for proper number of arguments */
 	if (nrhs < 2) {
-		mexErrMsgIdAndTxt("MEX:writeLASFile_mex:nargin", "Two or three input arguments required!");
+		mexErrMsgIdAndTxt("MEX:writeLASFile_mex:nargin", "Two input arguments required!");
 	}
 	if (nrhs > 3) {
 		mexWarnMsgIdAndTxt("MEX:writeLASFile_mex:nargin", "More than three arguments provided! Extra arguments will be ignored!");
 	}
-	if (nlhs > 1) {
-		mexErrMsgIdAndTxt("MEX:writeLASFile_mex:nargout", "One or no output argument required");
+	if (nlhs > 0) {
+		mexErrMsgIdAndTxt("MEX:writeLASFile_mex:nargout", "This function does not return any output arguments");
 	}
 
 	if (!mxIsChar(prhs[1])) { // is not char array
@@ -73,25 +73,24 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 	std::ofstream lasBin(filePath, std::ios::out | std::ios::binary);
 	mxFree(filePath);										// Deallocate memory of path after opening file because it is not needed anymore
 
-
 	if (lasBin.is_open()) {
 		try {
 			// Initialize instance of lasDataWriter class
 			LasDataWriter lasWriter;
 
-			lasWriter.GetHeader(prhs);
+			lasWriter.GetHeader(prhs[0]);
 			lasWriter.WriteLASheader(lasBin);
 
 			if (lasWriter.HasVLR()) {
-				lasWriter.WriteVLR(lasBin, prhs);
+				lasWriter.WriteVLR(lasBin, prhs[0]);
 			}
 				
-			lasWriter.GetData(prhs);
+			lasWriter.GetData(prhs[0]);
 			lasWriter.WriteLASdata(lasBin);
 
 			if (lasWriter.HasExtVLR())
 			{
-				lasWriter.WriteExtVLR(lasBin, prhs);
+				lasWriter.WriteExtVLR(lasBin, prhs[0]);
 			}
 
 			lasBin.close();

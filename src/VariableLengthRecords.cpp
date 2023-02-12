@@ -19,7 +19,7 @@
 
 #endif
 
-void LasDataReader::setStreamToVLRHeader(std::ifstream& lasBin)
+void LAS_IO::setStreamToVLRHeader(std::ifstream& lasBin)
 {
 	// If end of file was reached during reading then clear bits to allow further reading and seeking for small files
 	if (lasBin.eof()) {
@@ -28,7 +28,7 @@ void LasDataReader::setStreamToVLRHeader(std::ifstream& lasBin)
 	lasBin.seekg(m_header.headerSize, lasBin.beg);
 }
 
-void LasDataReader::setStreamToExtVLRHeader(std::ifstream& lasBin)
+void LAS_IO::setStreamToExtVLRHeader(std::ifstream& lasBin)
 {
 	// If end of file was reached during reading then clear bits to allow further reading and seeking for small files
 	if (lasBin.eof()) {
@@ -69,29 +69,29 @@ void LasDataReader::readExtVLRHeader(std::ifstream& lasBin)
 	std::memcpy(m_ExtVLRHeader.description	, pBuffer + 28, 32 * sizeof(char));
 }
 
-mxArray* LasDataReader::createMXVLRStruct(mxArray * plhs[])
+mxArray* LasDataReader::createMXVLRStruct(mxArray*& plhs)
 {
 	const char* field_names[] = { "reserved", "user_id", "record_id", "record_length","description", "data", "data_as_text" };
 	mwSize dimsStruct[2] = { m_header.numberOfVariableLengthRecords, 7 };
 
 	mxArray* vlrhStruct = mxCreateStructArray(1, dimsStruct, 7, field_names);
 
-	mxSetField(plhs[0], 0, "variablerecords", vlrhStruct);
-	return mxGetField(plhs[0], 0, "variablerecords");
+	mxSetField(plhs, 0, "variablerecords", vlrhStruct);
+	return mxGetField(plhs, 0, "variablerecords");
 }
 
-mxArray* LasDataReader::createMXExtVLRStruct(mxArray* plhs[])
+mxArray* LasDataReader::createMXExtVLRStruct(mxArray*& plhs)
 {
 	const char* field_names[] = { "reserved", "user_id", "record_id", "record_length","description", "data", "data_as_text" };
 	mwSize dimsStruct[2] = { m_headerExt4.numberOfExtendedVariableLengthRecords, 7 };
 
 	mxArray* extvlrhStruct = mxCreateStructArray(1, dimsStruct, 7, field_names);
 
-	mxSetField(plhs[0], 0, "extendedvariables", extvlrhStruct);
-	return mxGetField(plhs[0], 0, "extendedvariables");
+	mxSetField(plhs, 0, "extendedvariables", extvlrhStruct);
+	return mxGetField(plhs, 0, "extendedvariables");
 }
 
-void LasDataReader::ReadVLR(mxArray* plhs[], std::ifstream& lasBin)
+void LasDataReader::ReadVLR(mxArray*& plhs, std::ifstream& lasBin)
 {
 	mxArray*  pMXArray;
 	mxArray*  tempMXString;
@@ -146,7 +146,7 @@ void LasDataReader::ReadVLR(mxArray* plhs[], std::ifstream& lasBin)
 	}
 }
 
-void LasDataReader::ReadExtVLR(mxArray* plhs[], std::ifstream& lasBin)
+void LasDataReader::ReadExtVLR(mxArray*& plhs, std::ifstream& lasBin)
 {
 	mxArray*	pMXArray;
 	mxArray*	tempMXString;
@@ -203,7 +203,7 @@ void LasDataReader::ReadExtVLR(mxArray* plhs[], std::ifstream& lasBin)
 }
 
 
-void LasDataWriter::GetVLRHeader(mxArray pVLRfield[], size_t VLRindex) {
+void LasDataWriter::GetVLRHeader(mxArray* pVLRfield, size_t VLRindex) {
 
 	mxChar* pMXChar;
 
@@ -244,9 +244,9 @@ void LasDataWriter::GetVLRHeader(mxArray pVLRfield[], size_t VLRindex) {
 	std::memcpy(m_VLRHeader.vlrhBytes + 22, &m_VLRHeader.description, 32 * sizeof(char));
 }
 
-bool LasDataWriter::WriteVLR(std::ofstream& lasBin, const mxArray* matlabInput[])
+bool LasDataWriter::WriteVLR(std::ofstream& lasBin, const mxArray* matlabInput)
 {
-	mxArray* pVLRfield = mxGetField(matlabInput[0], 0, "variablerecords");
+	mxArray* pVLRfield = mxGetField(matlabInput, 0, "variablerecords");
 
 	for (size_t i = 0; i < m_header.numberOfVariableLengthRecords; ++i) {
 
@@ -266,7 +266,7 @@ bool LasDataWriter::WriteVLR(std::ofstream& lasBin, const mxArray* matlabInput[]
 	return true;
 }
 
-void LasDataWriter::GetExtVLRHeader(mxArray pVLRfield[], size_t VLRindex) {
+void LasDataWriter::GetExtVLRHeader(mxArray* pVLRfield, size_t VLRindex) {
 
 	mxChar* pMXChar;
 
@@ -307,22 +307,36 @@ void LasDataWriter::GetExtVLRHeader(mxArray pVLRfield[], size_t VLRindex) {
 	std::memcpy(m_ExtVLRHeader.extvlrhBytes + 28, &m_ExtVLRHeader.description, 32 * sizeof(char));
 }
 
-bool LasDataWriter::WriteExtVLR(std::ofstream& lasBin, const mxArray* matlabInput[])
+bool LasDataWriter::WriteExtVLR(std::ofstream& lasBin, const mxArray* matlabInput)
 {
-	mxArray* pVLRfield = mxGetField(matlabInput[0], 0, "extendedvariables");
+	mxArray* pExtVLRfield = mxGetField(matlabInput, 0, "extendedvariables");
 
 	for (size_t i = 0; i < m_header.numberOfVariableLengthRecords; ++i) {
 
 		// Get header, write header, then write data
-		GetExtVLRHeader(pVLRfield, i);
+		GetExtVLRHeader(pExtVLRfield, i);
 		lasBin.write(m_ExtVLRHeader.extvlrhBytes, 54);
 
 		// Get and write data
-		if (m_VLRHeader.recordLengthAfterHeader > 0) {
-			mxUint8* dataPointer = GetUint8(mxGetField(pVLRfield, i, "data"));
+		if (m_ExtVLRHeader.recordLengthAfterHeader > 0) {
+			mxUint8* dataPointer = GetUint8(mxGetField(pExtVLRfield, i, "data"));
 			lasBin.write((char*)dataPointer, m_ExtVLRHeader.recordLengthAfterHeader);
 		}
 	}
 
 	return true;
+}
+
+void LasDataWriter::SetCurrentStreamPosAsDataOffset(std::ofstream& lasBin)
+{
+	std::streampos currentStreampos = lasBin.tellp();
+
+	if (static_cast<unsigned short>(currentStreampos) != m_header.offsetToPointData)
+	{
+		mexWarnMsgIdAndTxt("MEX:SetCurrentStreamPosAsOffset:new_streampos", "Offset to Point Data was Updated!");
+		lasBin.seekp(96, lasBin.beg);
+		m_header.offsetToPointData = static_cast<unsigned long>(currentStreampos);
+		lasBin.write((char*)&m_header.offsetToPointData, sizeof(unsigned long));
+		lasBin.seekp(currentStreampos, lasBin.beg);
+	}
 }

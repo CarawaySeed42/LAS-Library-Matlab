@@ -28,7 +28,7 @@
 %% ------------------------------------------------------------------------
 % User Input
 outdir = '../lib/mex';
-debug = true;
+debug = false;
 UseInterleavedComplexAPI = true;
 verbose = false;
 compiler_flags = '-std=c++17';

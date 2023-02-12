@@ -456,6 +456,8 @@ if lasHeader.version_minor > 3
             lasHeader.point_data_record_length + lasHeader.offset_to_point_data;
         if ~isempty(las.extendedvariables)
             lasHeader.start_of_extended_variable_length_record = extendedStart;
+        else
+            lasHeader.start_of_extended_variable_length_record = 0;
         end
     end
     if ~isfield(lasHeader,'number_of_extended_variable_length_record')

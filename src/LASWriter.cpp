@@ -1,6 +1,7 @@
 #include "LAS_IO.cpp"
 #include <cstring>
 #include <memory>
+#include <cmath>
 
 // Preprocessor directives to get field data
 
@@ -151,7 +152,7 @@ bool LasDataWriter::WriteLASdata(std::ofstream& lasBin)
 	size_t bufOffPointStart = 0;		// Offset to current position in write Buffer
 
 	// Check if necessary Pointers are valid (Creates Matlab Error if not)
-	AreSourcePointersValid();
+	isDataValid();
 
 	// Get Interal record format and get all the byte offsets to LAS Fields
 	SetInternalRecordFormatID();
@@ -298,11 +299,12 @@ bool LasDataWriter::WriteLASdata(std::ofstream& lasBin)
 	return true;
 }
 
-bool LasDataWriter::GetHeader(const mxArray* const prhs[])
+bool LasDataWriter::GetHeader(const mxArray* prhs)
 {
 	mxDouble* pMXDouble;
 	mxChar* pMXChar;
-	mxArray* pMxHeader = mxGetField(prhs[0], 0, "header");
+	mxArray* pMxHeader = mxGetField(prhs, 0, "header");
+	m_mxStructPointer.pMXheader = pMxHeader;
 
 	if (nullptr == pMxHeader) {
 		mexErrMsgIdAndTxt("MEX:GetHeader:AccessViolation", "Could not access header field of LAS structure!");
@@ -366,7 +368,7 @@ bool LasDataWriter::GetHeader(const mxArray* const prhs[])
 	{
 		m_headerExt4.numberOfPointRecords = m_numberOfPointsToWrite;
 		m_headerExt4.startOfFirstExtendedVariableLengthRecord = static_cast<uint64_t>(*GetDoubles(mxGetField(pMxHeader, 0, "start_of_extended_variable_length_record")));
-		m_headerExt4.numberOfExtendedVariableLengthRecords = static_cast<uint64_t>(*GetDoubles(mxGetField(pMxHeader, 0, "number_of_extended_variable_length_record")));
+		m_headerExt4.numberOfExtendedVariableLengthRecords = static_cast<uint32_t>(*GetDoubles(mxGetField(pMxHeader, 0, "number_of_extended_variable_length_record")));
 
 		pMXDouble = GetDoubles(mxGetField(pMxHeader, 0, "number_of_points_by_return"));
 		for (int i = 0; i < 15; ++i) { m_headerExt4.numberOfPointsByReturn[i] = static_cast<uint64_t>(pMXDouble[i]); }
@@ -402,180 +404,167 @@ bool LasDataWriter::GetHeader(const mxArray* const prhs[])
 	return true;
 }
 
-bool LasDataWriter::GetData(const mxArray* const prhs[]) {
+bool LasDataWriter::GetData(const mxArray* prhs) {
 
 	setContentFlags();
 
-	m_mxStructPointer.pX = GetDoubles(mxGetField(prhs[0], 0, "x"));
-	m_mxStructPointer.pY = GetDoubles(mxGetField(prhs[0], 0, "y"));
-	m_mxStructPointer.pZ = GetDoubles(mxGetField(prhs[0], 0, "z"));
-	m_mxStructPointer.pIntensity = GetUint16(mxGetField(prhs[0], 0, "intensity"));
-	m_mxStructPointer.pBits = GetUint8(mxGetField(prhs[0], 0, "bits"));
+	m_mxStructPointer.pX = GetDoubles(mxGetField(prhs, 0, "x"));
+	m_mxStructPointer.pY = GetDoubles(mxGetField(prhs, 0, "y"));
+	m_mxStructPointer.pZ = GetDoubles(mxGetField(prhs, 0, "z"));
+	m_mxStructPointer.pIntensity = GetUint16(mxGetField(prhs, 0, "intensity"));
+	m_mxStructPointer.pBits = GetUint8(mxGetField(prhs, 0, "bits"));
 
 	if (m_header.PointDataRecordFormat > 5)
 	{
-		m_mxStructPointer.pBits2 = GetUint8(mxGetField(prhs[0], 0, "bits2"));
+		m_mxStructPointer.pBits2 = GetUint8(mxGetField(prhs, 0, "bits2"));
 	}
 
-	m_mxStructPointer.pClassicfication = GetUint8(mxGetField(prhs[0], 0, "classification"));
-	m_mxStructPointer.pUserData = GetUint8(mxGetField(prhs[0], 0, "user_data"));
+	m_mxStructPointer.pClassicfication = GetUint8(mxGetField(prhs, 0, "classification"));
+	m_mxStructPointer.pUserData = GetUint8(mxGetField(prhs, 0, "user_data"));
 
 
 	if (m_header.PointDataRecordFormat < 6)
 	{
-		m_mxStructPointer.pScanAngle = GetInt8(mxGetField(prhs[0], 0, "scan_angle"));
+		m_mxStructPointer.pScanAngle = GetInt8(mxGetField(prhs, 0, "scan_angle"));
 	}
 	else
 	{
-		m_mxStructPointer.pScanAngle_16Bit = GetInt16(mxGetField(prhs[0], 0, "scan_angle"));
+		m_mxStructPointer.pScanAngle_16Bit = GetInt16(mxGetField(prhs, 0, "scan_angle"));
 	}
 
-	m_mxStructPointer.pPointSourceID = GetUint16(mxGetField(prhs[0], 0, "point_source_id"));
+	m_mxStructPointer.pPointSourceID = GetUint16(mxGetField(prhs, 0, "point_source_id"));
 
 	if (m_containsTime) {
-		m_mxStructPointer.pGPS_Time = GetDoubles(mxGetField(prhs[0], 0, "gps_time"));
+		m_mxStructPointer.pGPS_Time = GetDoubles(mxGetField(prhs, 0, "gps_time"));
 	}
 
 	if (m_containsColors)
 	{
-		m_mxStructPointer.pRed = GetUint16(mxGetField(prhs[0], 0, "red"));
-		m_mxStructPointer.pGreen = GetUint16(mxGetField(prhs[0], 0, "green"));
-		m_mxStructPointer.pBlue = GetUint16(mxGetField(prhs[0], 0, "blue"));
+		m_mxStructPointer.pRed = GetUint16(mxGetField(prhs, 0, "red"));
+		m_mxStructPointer.pGreen = GetUint16(mxGetField(prhs, 0, "green"));
+		m_mxStructPointer.pBlue = GetUint16(mxGetField(prhs, 0, "blue"));
 	}
 
 	if (m_containsWavepackets)
 	{
-		m_mxStructPointer.pWavePacketDescriptor = GetUint8(mxGetField(prhs[0], 0, "wave_packet_descriptor"));
-		m_mxStructPointer.pWaveByteOffset = GetUint64(mxGetField(prhs[0], 0, "wave_byte_offset"));
-		m_mxStructPointer.pWavePacketSize = GetUint32(mxGetField(prhs[0], 0, "wave_packet_size"));
-		m_mxStructPointer.pWaveReturnPoint = GetSingles(mxGetField(prhs[0], 0, "wave_return_point"));
-		m_mxStructPointer.pWaveXt = GetSingles(mxGetField(prhs[0], 0, "Xt"));
-		m_mxStructPointer.pWaveYt = GetSingles(mxGetField(prhs[0], 0, "Yt"));
-		m_mxStructPointer.pWaveZt = GetSingles(mxGetField(prhs[0], 0, "Zt"));
+		m_mxStructPointer.pWavePacketDescriptor = GetUint8(mxGetField(prhs, 0, "wave_packet_descriptor"));
+		m_mxStructPointer.pWaveByteOffset = GetUint64(mxGetField(prhs, 0, "wave_byte_offset"));
+		m_mxStructPointer.pWavePacketSize = GetUint32(mxGetField(prhs, 0, "wave_packet_size"));
+		m_mxStructPointer.pWaveReturnPoint = GetSingles(mxGetField(prhs, 0, "wave_return_point"));
+		m_mxStructPointer.pWaveXt = GetSingles(mxGetField(prhs, 0, "Xt"));
+		m_mxStructPointer.pWaveYt = GetSingles(mxGetField(prhs, 0, "Yt"));
+		m_mxStructPointer.pWaveZt = GetSingles(mxGetField(prhs, 0, "Zt"));
 	}
 
 	if (m_containsNIR)
 	{
-		m_mxStructPointer.pNIR = GetUint16(mxGetField(prhs[0], 0, "nir"));
+		m_mxStructPointer.pNIR = GetUint16(mxGetField(prhs, 0, "nir"));
 	}
 
 	if (m_containsExtraBytes)
 	{
-		m_mxStructPointer.pExtraBytes = GetUint8(mxGetField(prhs[0], 0, "extradata"));
+		m_mxStructPointer.pExtraBytes = GetUint8(mxGetField(prhs, 0, "extradata"));
 	}
 
 	return true;
 }
 
-void LasDataWriter::AreSourcePointersValid()
+void LasDataWriter::isDataValid()
 {
 	if (nullptr == m_mxStructPointer.pX) {
-		mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to X invalid!");
+		mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to X invalid!");
 	}
 	if (nullptr == m_mxStructPointer.pY) {
-		mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Y invalid!");
+		mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Y invalid!");
 	}
 	if (nullptr == m_mxStructPointer.pZ) {
-		mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Z invalid!");
+		mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Z invalid!");
 	}
 	if (nullptr == m_mxStructPointer.pIntensity) {
-		mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Intensity invalid!");
+		mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Intensity invalid!");
 	}
 	if (nullptr == m_mxStructPointer.pBits) {
-		mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Bitfield invalid!");
+		mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Bitfield invalid!");
 	}
 	if (m_header.PointDataRecordFormat > 5)
 	{
 		if (nullptr == m_mxStructPointer.pBits2) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to second Bitfield invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to second Bitfield invalid!");
 		}
 	}
 	if (nullptr == m_mxStructPointer.pClassicfication) {
-		mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Classificaton invalid!");
+		mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Classificaton invalid!");
 	}
 	if (nullptr == m_mxStructPointer.pUserData) {
-		mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to User Data invalid!");
+		mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to User Data invalid!");
 	}
 	if (m_header.PointDataRecordFormat < 6)
 	{
 		if (nullptr == m_mxStructPointer.pScanAngle) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to 8bit Scan Angle invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to 8bit Scan Angle invalid!");
 		}
 	}
 	else
 	{
 		if (nullptr == m_mxStructPointer.pScanAngle_16Bit) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to 16bit Scan Angle invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to 16bit Scan Angle invalid!");
 		}
 	}
 	if (nullptr == m_mxStructPointer.pPointSourceID) {
-		mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Point Source ID invalid!");
+		mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Point Source ID invalid!");
 	}
 	if (m_containsTime) {
 		if (nullptr == m_mxStructPointer.pGPS_Time) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to GPS Time invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to GPS Time invalid!");
 		}
 	}
 	if (m_containsColors)
 	{
 		if (nullptr == m_mxStructPointer.pRed) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Red Channel invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Red Channel invalid!");
 		}
 		if (nullptr == m_mxStructPointer.pGreen) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Green Channel invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Green Channel invalid!");
 		}
 		if (nullptr == m_mxStructPointer.pBlue) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Blue Channel invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Blue Channel invalid!");
 		}
 	}
 	if (m_containsWavepackets)
 	{
 		if (nullptr == m_mxStructPointer.pWavePacketDescriptor) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Wave Packet Descriptor invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Wave Packet Descriptor invalid!");
 		}
 		if (nullptr == m_mxStructPointer.pWaveByteOffset) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Wave Packet Byte Offset invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Wave Packet Byte Offset invalid!");
 		}
 		if (nullptr == m_mxStructPointer.pWavePacketSize) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Wave Packet Size invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Wave Packet Size invalid!");
 		}
 		if (nullptr == m_mxStructPointer.pWaveReturnPoint) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Wave Return Point invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Wave Return Point invalid!");
 		}
 		if (nullptr == m_mxStructPointer.pWaveXt) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Parametric dX invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Parametric dX invalid!");
 		}
 		if (nullptr == m_mxStructPointer.pWaveYt) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Parametric dY invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Parametric dY invalid!");
 		}
 		if (nullptr == m_mxStructPointer.pWaveZt) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Parametric dZ invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Parametric dZ invalid!");
 		}
 	}
 	if (m_containsNIR)
 	{
 		if (nullptr == m_mxStructPointer.pNIR) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Near Infrared Channel invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Near Infrared Channel invalid!");
 		}
 	}
 	if (m_containsExtraBytes)
 	{
 		if (nullptr == m_mxStructPointer.pExtraBytes) {
-			mexErrMsgIdAndTxt("MEX:LASWriter:areSourcePointersValid", "Pointer to Extrabytes invalid!");
+			mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to Extrabytes invalid!");
 		}
 	}
 }
 
-void LasDataWriter::SetCurrentStreamPosAsDataOffset(std::ofstream& lasBin)
-{
-	std::streampos currentStreampos = lasBin.tellp();
-
-	if (static_cast<unsigned short>(currentStreampos) != m_header.offsetToPointData)
-	{
-		mexWarnMsgIdAndTxt("MEX:SetCurrentStreamPosAsOffset:new_streampos", "Offset to Point Data was Updated!");
-		lasBin.seekp(96, lasBin.beg);
-		m_header.offsetToPointData = static_cast<unsigned long>(currentStreampos);
-		lasBin.write((char*)&m_header.offsetToPointData, sizeof(unsigned long));
-		lasBin.seekp(currentStreampos, lasBin.beg);
-	}
-}

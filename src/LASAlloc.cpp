@@ -32,7 +32,7 @@
 
 #endif
 
-void LasDataReader::InitializeOutputStruct(mxArray* plhs[], std::ifstream& lasBin)
+void LasDataReader::InitializeOutputStruct(mxArray*& plhs, std::ifstream& lasBin)
 {
 	try
 	{
@@ -43,7 +43,7 @@ void LasDataReader::InitializeOutputStruct(mxArray* plhs[], std::ifstream& lasBi
 		mwSize dims[2] = { 1, 27 };
 
 		// Create structure for output var
-		plhs[0] = mxCreateStructArray(1, dims, 27, struct_field_names);
+		plhs = mxCreateStructArray(1, dims, 27, struct_field_names);
 
 		/* Allocate Header struct */
 		const char* header_field_names[] = { "source_id", "global_encoding", "project_id_guid1", "project_id_guid2","project_id_guid3", "project_id_guid4", "version_major", "version_minor",
@@ -53,7 +53,7 @@ void LasDataReader::InitializeOutputStruct(mxArray* plhs[], std::ifstream& lasBi
 		mwSize dimsHeader[2] = { 1, 31 };
 
 		m_mxStructPointer.pMXheader = mxCreateStructArray(1, dimsHeader, 31, header_field_names);
-		mxSetField(plhs[0], 0, "header", m_mxStructPointer.pMXheader);
+		mxSetField(plhs, 0, "header", m_mxStructPointer.pMXheader);
 
 	}
 	catch (const std::bad_alloc& ba) {
@@ -186,7 +186,7 @@ void LasDataReader::FillStructHeader(std::ifstream& lasBin)
 	}
 }
 
-void LasDataReader::AllocateOutputStruct(mxArray* plhs[], std::ifstream& lasBin) {
+void LasDataReader::AllocateOutputStruct(mxArray*& plhs, std::ifstream& lasBin) {
 
 	try {
 		// Pointer to the mxArray which is to be allocated right now, pointer shifts from field to field
@@ -194,125 +194,125 @@ void LasDataReader::AllocateOutputStruct(mxArray* plhs[], std::ifstream& lasBin)
 
 		// Create empty matrices for point data, set fields to output struct and get pointers to underlying data
 		pointerTocurrentMXArray = mxCreateDoubleMatrix((mwSize)m_numberOfPointsToRead, 1, mxREAL);
-		mxSetField(plhs[0], 0, "x", pointerTocurrentMXArray);
+		mxSetField(plhs, 0, "x", pointerTocurrentMXArray);
 		m_mxStructPointer.pX = GetDoubles(pointerTocurrentMXArray);
 
 		pointerTocurrentMXArray = mxCreateDoubleMatrix((mwSize)m_numberOfPointsToRead, 1, mxREAL);
-		mxSetField(plhs[0], 0, "y", pointerTocurrentMXArray);
+		mxSetField(plhs, 0, "y", pointerTocurrentMXArray);
 		m_mxStructPointer.pY = GetDoubles(pointerTocurrentMXArray);
 		
 		pointerTocurrentMXArray = mxCreateDoubleMatrix((mwSize)m_numberOfPointsToRead, 1, mxREAL);
-		mxSetField(plhs[0], 0, "z", pointerTocurrentMXArray);
+		mxSetField(plhs, 0, "z", pointerTocurrentMXArray);
 		m_mxStructPointer.pZ = GetDoubles(pointerTocurrentMXArray);
 
 		pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxUINT16_CLASS, mxREAL);
-		mxSetField(plhs[0], 0, "intensity", pointerTocurrentMXArray);
+		mxSetField(plhs, 0, "intensity", pointerTocurrentMXArray);
 		m_mxStructPointer.pIntensity = GetUint16(pointerTocurrentMXArray);
 		
 		// If unsafeRead is used then return because we only read xyz and intensity
 		if (unsafeRead) { return; }
 
 		pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxUINT8_CLASS, mxREAL);
-		mxSetField(plhs[0], 0, "bits", pointerTocurrentMXArray);
+		mxSetField(plhs, 0, "bits", pointerTocurrentMXArray);
 		m_mxStructPointer.pBits = GetUint8(pointerTocurrentMXArray);
 		
 		// Second bit field only exists in format 5 and higher
 		if (m_header.PointDataRecordFormat > 5)
 		{
 			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxUINT8_CLASS, mxREAL);
-			mxSetField(plhs[0], 0, "bits2", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "bits2", pointerTocurrentMXArray);
 			m_mxStructPointer.pBits2 = GetUint8(pointerTocurrentMXArray);
 		}
 
 		pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxUINT8_CLASS, mxREAL);
-		mxSetField(plhs[0], 0, "classification", pointerTocurrentMXArray);
+		mxSetField(plhs, 0, "classification", pointerTocurrentMXArray);
 		m_mxStructPointer.pClassicfication = GetUint8(pointerTocurrentMXArray);
 
 		pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxUINT8_CLASS, mxREAL);
-		mxSetField(plhs[0], 0, "user_data", pointerTocurrentMXArray);
+		mxSetField(plhs, 0, "user_data", pointerTocurrentMXArray);
 		m_mxStructPointer.pUserData = GetUint8(pointerTocurrentMXArray);
 
 		// Scan Angle changes Datatype from Format 6 on
 		if (m_header.PointDataRecordFormat < 6) {
 			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxINT8_CLASS, mxREAL);
-			mxSetField(plhs[0], 0, "scan_angle", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "scan_angle", pointerTocurrentMXArray);
 			m_mxStructPointer.pScanAngle = GetInt8(pointerTocurrentMXArray);
 		}
 		else
 		{
 			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxINT16_CLASS, mxREAL);
-			mxSetField(plhs[0], 0, "scan_angle", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "scan_angle", pointerTocurrentMXArray);
 			m_mxStructPointer.pScanAngle_16Bit = GetInt16(pointerTocurrentMXArray);
 		}
 
 		pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxUINT16_CLASS, mxREAL);
-		mxSetField(plhs[0], 0, "point_source_id", pointerTocurrentMXArray);
+		mxSetField(plhs, 0, "point_source_id", pointerTocurrentMXArray);
 		m_mxStructPointer.pPointSourceID = GetUint16(pointerTocurrentMXArray);
 
 		// Only allocate time, colors, wavepackets, nir and extrabytes in struct if file contains them
 		if (m_containsTime)
 		{
 			pointerTocurrentMXArray = mxCreateDoubleMatrix((mwSize)m_numberOfPointsToRead, 1, mxREAL);
-			mxSetField(plhs[0], 0, "gps_time", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "gps_time", pointerTocurrentMXArray);
 			m_mxStructPointer.pGPS_Time = GetDoubles(pointerTocurrentMXArray);
 		}
 		if (m_containsColors)
 		{
 			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxUINT16_CLASS, mxREAL);
-			mxSetField(plhs[0], 0, "red", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "red", pointerTocurrentMXArray);
 			m_mxStructPointer.pRed = GetUint16(pointerTocurrentMXArray);
 
 			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxUINT16_CLASS, mxREAL);
-			mxSetField(plhs[0], 0, "green", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "green", pointerTocurrentMXArray);
 			m_mxStructPointer.pGreen = GetUint16(pointerTocurrentMXArray);
 
 			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxUINT16_CLASS, mxREAL);
-			mxSetField(plhs[0], 0, "blue", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "blue", pointerTocurrentMXArray);
 			m_mxStructPointer.pBlue = GetUint16(pointerTocurrentMXArray);
 		}
 
 		if (m_containsWavepackets)
 		{
 			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxUINT8_CLASS, mxREAL);
-			mxSetField(plhs[0], 0, "wave_packet_descriptor", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "wave_packet_descriptor", pointerTocurrentMXArray);
 			m_mxStructPointer.pWavePacketDescriptor = GetUint8(pointerTocurrentMXArray);
 
 			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxUINT64_CLASS, mxREAL);
-			mxSetField(plhs[0], 0, "wave_byte_offset", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "wave_byte_offset", pointerTocurrentMXArray);
 			m_mxStructPointer.pWaveByteOffset = GetUint64(pointerTocurrentMXArray);
 
 			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxUINT32_CLASS, mxREAL);
-			mxSetField(plhs[0], 0, "wave_packet_size", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "wave_packet_size", pointerTocurrentMXArray);
 			m_mxStructPointer.pWavePacketSize = GetUint32(pointerTocurrentMXArray);
 			
 			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxSINGLE_CLASS, mxREAL);
-			mxSetField(plhs[0], 0, "wave_return_point", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "wave_return_point", pointerTocurrentMXArray);
 			m_mxStructPointer.pWaveReturnPoint = GetSingles(pointerTocurrentMXArray);
 
 			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxSINGLE_CLASS, mxREAL);
-			mxSetField(plhs[0], 0, "Xt", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "Xt", pointerTocurrentMXArray);
 			m_mxStructPointer.pWaveXt = GetSingles(pointerTocurrentMXArray);
 
 			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxSINGLE_CLASS, mxREAL);
-			mxSetField(plhs[0], 0, "Yt", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "Yt", pointerTocurrentMXArray);
 			m_mxStructPointer.pWaveYt = GetSingles(pointerTocurrentMXArray);
 
 			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxSINGLE_CLASS, mxREAL);
-			mxSetField(plhs[0], 0, "Zt", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "Zt", pointerTocurrentMXArray);
 			m_mxStructPointer.pWaveZt = GetSingles(pointerTocurrentMXArray);
 		}
 
 		if (m_containsNIR)
 		{
 			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxUINT16_CLASS, mxREAL);
-			mxSetField(plhs[0], 0, "nir", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "nir", pointerTocurrentMXArray);
 			m_mxStructPointer.pNIR = GetUint16(pointerTocurrentMXArray);
 		}
 
 		if (m_containsExtraBytes)
 		{
 			pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_extraByteCount, (mwSize)m_numberOfPointsToRead,  mxUINT8_CLASS, mxREAL);
-			mxSetField(plhs[0], 0, "extradata", pointerTocurrentMXArray);
+			mxSetField(plhs, 0, "extradata", pointerTocurrentMXArray);
 			m_mxStructPointer.pExtraBytes = GetUint8(pointerTocurrentMXArray);
 		}
 

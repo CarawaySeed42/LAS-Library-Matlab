@@ -112,7 +112,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 			bool headerGood = lasReader.CheckHeaderConsistency(lasBin);
 
 			// Create Output Structure
-			lasReader.InitializeOutputStruct(plhs, lasBin);
+			lasReader.InitializeOutputStruct(plhs[0], lasBin);
 
 			// Fill Header of output Structure
 			lasReader.FillStructHeader(lasBin);
@@ -126,7 +126,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 			// Read Variable Length Records if they are present
 			if (lasReader.HasVLR())
 			{
-				lasReader.ReadVLR(plhs, lasBin);
+				lasReader.ReadVLR(plhs[0], lasBin);
 			}
 
 			// If specified then return after loading VLRs
@@ -136,7 +136,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 			}
 
 			// Allocate Rest of the Point Data if load only header is not chosen
-			lasReader.AllocateOutputStruct(plhs, lasBin);
+			lasReader.AllocateOutputStruct(plhs[0], lasBin);
 
 			// Read Las Data
 			lasReader.ReadPointData(lasBin);
@@ -144,7 +144,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 			// Read Extended Variable Length Records if they are present
 			if (lasReader.HasExtVLR())
 			{
-				lasReader.ReadExtVLR(plhs, lasBin);
+				lasReader.ReadExtVLR(plhs[0], lasBin);
 			}
 			
 			// Close file if it was still open

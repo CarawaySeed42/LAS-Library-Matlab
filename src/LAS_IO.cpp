@@ -145,6 +145,12 @@ protected:
 	const std::vector<unsigned char> m_NIR_Byte				{  0,  0,  0,  0,  0,  0,  0,  0, 36,  0, 36 };	// Byte offset to near infrared channel
 	const std::vector<unsigned char> m_wavePackets_Byte		{  0,  0,  0,  0, 28, 34,  0,  0,  0, 30, 38};	// Byte offset to wave packets
 	
+	// Moves the stream position to the beginning of the variable length record header
+	void setStreamToVLRHeader(std::ifstream& lasBin);
+
+	// Moves the stream position to the beginning of the extended variable length record header
+	void setStreamToExtVLRHeader(std::ifstream& lasBin);
+
 	// Assign the PDRF to an index to retrieve byte offsets for all fields
 	void SetInternalRecordFormatID()
 	{
@@ -229,12 +235,6 @@ private:
 	//Flag for unsafe reading if point data record format is not supported or point data record length is smaller than specification for pdrf
 	bool unsafeRead = false;
 
-	// Moves the stream position to the beginning of the variable length record header
-	void setStreamToVLRHeader(std::ifstream& lasBin);
-
-	// Moves the stream position to the beginning of the extended variable length record header
-	void setStreamToExtVLRHeader(std::ifstream& lasBin);
-
 	/// <summary>
 	/// Reads one Variable Length Record Header from file to class member m_VLRHeader. The ifstream position has to point to the beginning of a variable length record header!
 	/// </summary>
@@ -252,14 +252,14 @@ private:
 	/// </summary>
 	/// <param name="plhs"></param>
 	/// <returns>mxArray*: Pointer to created struct mxArray</returns>
-	mxArray* createMXVLRStruct(mxArray* plhs[]);
+	mxArray* createMXVLRStruct(mxArray*& plhs);
 
 	/// <summary>
 	/// Creates the Extended Variable Length Record field structure for the matlab output struct
 	/// </summary>
 	/// <param name="plhs"></param>
 	/// <returns>mxArray*: Pointer to created struct mxArray</returns>
-	mxArray* createMXExtVLRStruct(mxArray* plhs[]);
+	mxArray* createMXExtVLRStruct(mxArray*& plhs);
 
 public:
 
@@ -289,14 +289,14 @@ public:
 	/// </summary>
 	/// <param name="plhs"></param>
 	/// <param name="lasBin"></param>
-	void InitializeOutputStruct(mxArray* plhs[], std::ifstream& lasBin);
+	void InitializeOutputStruct(mxArray*& plhs, std::ifstream& lasBin);
 
 	/// <summary>
 	/// Allocate point data fields of output struct according to header information and save data pointer to m_mxStructPointer
 	/// </summary>
 	/// <param name="plhs"></param>
 	/// <param name="lasBin"></param>
-	void AllocateOutputStruct(mxArray* plhs[], std::ifstream& lasBin);
+	void AllocateOutputStruct(mxArray*& plhs, std::ifstream& lasBin);
 
 	/// <summary>
 	/// Allocates matlab header struct and sets values from class member m_header to it
@@ -308,13 +308,13 @@ public:
 	/// Reads every Variable Length Record from file and writes it to matlab output struct
 	/// </summary>
 	/// <param name="lasBin"></param>
-	void ReadVLR(mxArray* plhs[], std::ifstream& lasBin);
+	void ReadVLR(mxArray*& plhs, std::ifstream& lasBin);
 
 	/// <summary>
 	/// Reads every Extended Variable Length Record from file and writes it to matlab output struct
 	/// </summary>
 	/// <param name="lasBin"></param>
-	void ReadExtVLR(mxArray* plhs[], std::ifstream& lasBin);
+	void ReadExtVLR(mxArray*& plhs, std::ifstream& lasBin);
 	
 private:
 	/* --- Inline Functions for reading individual point data fields --- */
@@ -471,7 +471,7 @@ private:
 	const size_t m_record_lengths_size = m_record_lengths.size();
 
 	// Are the Pointers to the neccessary Matlab data valid (Throws Matlab Error if not)
-	void AreSourcePointersValid();
+	void isDataValid();
 
 	void SetCurrentStreamPosAsDataOffset(std::ofstream& lasBin);
 
@@ -480,17 +480,18 @@ private:
 	void GetExtVLRHeader(mxArray* pVLRfield, size_t VLRindex);
 
 public:
-	bool GetHeader(const mxArray* const matlabInput[]);
+	bool GetHeader(const mxArray* lasStructure);
 
-	bool GetData(const mxArray* const matlabInput[]);
+	bool GetData(const mxArray* lasStructure);
 
 	bool WriteLASheader(std::ofstream& lasBin);
 
-	bool WriteVLR(std::ofstream& lasBin, const mxArray* matlabInput[]);
-
-	bool WriteExtVLR(std::ofstream& lasBin, const mxArray* matlabInput[]);
-
 	bool WriteLASdata(std::ofstream& lasBin);
+
+	bool WriteVLR(std::ofstream& lasBin, const mxArray* lasStructure);
+
+	bool WriteExtVLR(std::ofstream& lasBin, const mxArray* lasStructure);
+
 };
 
 #endif
