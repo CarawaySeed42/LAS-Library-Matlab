@@ -1,9 +1,9 @@
-function lasStruct = encode_extrabytes(lasStruct, extrabytes, VLRDescription, addToExisting)
-%lasStruct = encode_extrabytes(lasStruct, extrabytes, VLRDescription, addToExisting)
+function lasStruct = encode_extrabytes(lasStruct, extrabytes, VLRDescription, doAppend)
+%lasStruct = encode_extrabytes(lasStruct, extrabytes, VLRDescription, doAppend)
 %   Encode an extrabytes object and write its decoded data to LAS structure. 
 %   The encoding options and values have to be set inside the descriptor 
 %   fields of the extrabytes. Then the extrabytes will be added to
-%   the already existing if addToExisting flag is true. Otherwise it will
+%   the already existing if doAppend flag is true. Otherwise it will
 %   be overwritten. If more then one extrabytes VLR exists then only
 %   the first will be recognized and the other one will be deleted!
 %   Undocumented extrabytes will be encoded as uint64!
@@ -21,7 +21,7 @@ function lasStruct = encode_extrabytes(lasStruct, extrabytes, VLRDescription, ad
 %   VLRDescription (char array) : Default: 'Extra Bytes'
 %                                 Description of the VLR. If none is
 %                                 provided then 'Extrabytes' will be written
-%   addToExisting (bool)        : Default: false
+%   doAppend (bool)        : Default: false
 %                                 If False existing extrabytes will be
 %                                 overwritten. If True extrabytes will be
 %                                 added. 
@@ -47,7 +47,7 @@ if nargin < 3
     VLRDescription = 'Extra Bytes';
 end
 if nargin < 4
-    addToExisting = false;
+    doAppend = false;
 end
 
 %% Definitions and Initializations
@@ -85,22 +85,25 @@ end
 % If multiple VLR with extrabytes then delete them all and force overwrite
 if length(vlr_index) > 1
     lasStruct.variablerecords(vlr_index) = [];
-    addToExisting = false;
+    doAppend = false;
 end
 
-if ~addToExisting || (vlr_count == 0)
+if ~doAppend || (vlr_count == 0)
     lasStruct.variablerecords(vlr_index).reserved       = 0;
     lasStruct.variablerecords(vlr_index).user_id        = 'LASF_Spec';
     lasStruct.variablerecords(vlr_index).record_id      = 4;
     lasStruct.variablerecords(vlr_index).record_length  = 0;
+    lasStruct.variablerecords(vlr_index).description    = VLRDescription;
     lasStruct.variablerecords(vlr_index).data           = [];%zeros(descriptor_Size*extradata_Count, 1, 'uint8');
     lasStruct.variablerecords(vlr_index).data_as_text   = [];%blanks(descriptor_Size*extradata_Count);
     
     lasStruct.extradata = [];
+else
+    % Set VLR Descripton
+    lasStruct.variablerecords(vlr_index).description    = VLRDescription;
 end
 
-% Set VLR Descripton
-lasStruct.variablerecords(vlr_index).description    = VLRDescription;
+
 
 %% Processing
 
