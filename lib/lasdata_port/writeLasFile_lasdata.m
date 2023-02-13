@@ -287,7 +287,7 @@ function obj = writeheader(obj,fid)
         fwrite(fid, obj.header.project_id_guid1,'uint32');
         fwrite(fid, obj.header.project_id_guid2,'uint16');
         fwrite(fid, obj.header.project_id_guid3,'uint16');
-        fwrite(fid, obj.header.project_id_guid4,'int8');
+        fwrite(fid, obj.header.project_id_guid4,'uint8');
         fwrite(fid, obj.header.version_major,'uint8');
         fwrite(fid, obj.header.version_minor,'uint8');
         tmp = obj.header.system_identifier;
