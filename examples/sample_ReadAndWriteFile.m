@@ -1,11 +1,11 @@
 %% sample_ReadAndWriteFile
 % This is a sample script to demonstrate how to read a LAS-File and then
 % write it as a different point data format
-fprintf('\nRun: sample_GetExtrabytes\n');
+fprintf('\nRun: sample_ReadAndWriteFile\n');
 
 %% Add required paths
 addpath('../lib')
-addLASLibPaths()
+addLASLibPaths();
 
 %% Read LAS-File
 mpath = mfilename('fullpath');

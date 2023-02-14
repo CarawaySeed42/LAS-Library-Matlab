@@ -33,7 +33,7 @@ globalEncoding.wkt       = bitand(bitshift(lasEncoding, -4, 'uint16'), 1);
 globalEncoding.reserved       = bitand(bitshift(lasEncoding, -5, 'uint16'), 2047);
 
 if globalEncoding.waveform_data_packets_internal && globalEncoding.waveform_data_packets_external
-    warning('Waveform Data packets internal and external are not mutually exclusive!')
+    warning('Waveform Data packets internal and external are mutually exclusive!')
 end
    
 if globalEncoding.gps_time_type
