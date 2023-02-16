@@ -471,9 +471,9 @@ private:
 	const size_t m_record_lengths_size = m_record_lengths.size();
 
 	// Are the Pointers to the neccessary Matlab data valid (Throws Matlab Error if not)
-	void isDataValid();
+	void IsDataValid();
 
-	void SetCurrentStreamPosAsDataOffset(std::ofstream& lasBin);
+	void SetStreamPosAsDataOffset(std::ofstream& lasBin);
 
 	void GetVLRHeader(mxArray* pVLRfield, size_t VLRindex);
 

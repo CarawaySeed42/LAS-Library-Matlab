@@ -50,11 +50,11 @@ void LasDataReader::readVLRHeader(std::ifstream& lasBin)
 	char* pBuffer = &m_VLRHeader.vlrhBytes[0];
 	lasBin.read(pBuffer, 54);
 
-	m_VLRHeader.reserved				= *reinterpret_cast<unsigned short*>(pBuffer);
-	m_VLRHeader.recordID				= *reinterpret_cast<unsigned short*>(pBuffer + 18);
-	m_VLRHeader.recordLengthAfterHeader = *reinterpret_cast<unsigned short*>(pBuffer + 20);
-	std::memcpy(m_VLRHeader.userID		, pBuffer + 2,  16 * sizeof(char));
-	std::memcpy(m_VLRHeader.description	, pBuffer + 22, 32 * sizeof(char));
+	m_VLRHeader.reserved				= *reinterpret_cast<uint16_t*>(pBuffer);
+	m_VLRHeader.recordID				= *reinterpret_cast<uint16_t*>(pBuffer + 18);
+	m_VLRHeader.recordLengthAfterHeader = *reinterpret_cast<uint16_t*>(pBuffer + 20);
+	std::memcpy(m_VLRHeader.userID		, pBuffer + 2,  16);
+	std::memcpy(m_VLRHeader.description	, pBuffer + 22, 32);
 }
 
 void LasDataReader::readExtVLRHeader(std::ifstream& lasBin)
@@ -62,11 +62,11 @@ void LasDataReader::readExtVLRHeader(std::ifstream& lasBin)
 	char* pBuffer = &m_ExtVLRHeader.extvlrhBytes[0];
 	lasBin.read(pBuffer, 60);
 
-	m_ExtVLRHeader.reserved					= *reinterpret_cast<unsigned short*>(pBuffer);
-	m_ExtVLRHeader.recordID					= *reinterpret_cast<unsigned short*>(pBuffer + 18);
-	m_ExtVLRHeader.recordLengthAfterHeader	= *reinterpret_cast<unsigned long long*>(pBuffer + 20);
-	std::memcpy(m_ExtVLRHeader.userID		, pBuffer + 2,  16 * sizeof(char));
-	std::memcpy(m_ExtVLRHeader.description	, pBuffer + 28, 32 * sizeof(char));
+	m_ExtVLRHeader.reserved					= *reinterpret_cast<uint16_t*>(pBuffer);
+	m_ExtVLRHeader.recordID					= *reinterpret_cast<uint16_t*>(pBuffer + 18);
+	m_ExtVLRHeader.recordLengthAfterHeader	= *reinterpret_cast<uint64_t*>(pBuffer + 20);
+	std::memcpy(m_ExtVLRHeader.userID		, pBuffer + 2,  16);
+	std::memcpy(m_ExtVLRHeader.description	, pBuffer + 28, 32);
 }
 
 mxArray* LasDataReader::createMXVLRStruct(mxArray*& plhs)
@@ -135,7 +135,7 @@ void LasDataReader::ReadVLR(mxArray*& plhs, std::ifstream& lasBin)
 
 		pMXArray = mxCreateNumericMatrix(m_VLRHeader.recordLengthAfterHeader, 1,  mxUINT8_CLASS, mxREAL);
 		pUINT8 = GetUint8(pMXArray);
-		std::memcpy(pUINT8, readBuffer, m_VLRHeader.recordLengthAfterHeader * sizeof(char));
+		std::memcpy(pUINT8, readBuffer, m_VLRHeader.recordLengthAfterHeader);
 		mxSetField(vlrhStruct, i, "data", pMXArray);
 
 		mwSize dimsCharacters[2] = { 1, m_VLRHeader.recordLengthAfterHeader};
@@ -220,7 +220,7 @@ void LasDataWriter::GetVLRHeader(mxArray* pVLRfield, size_t VLRindex) {
 				break;
 			}
 
-			m_VLRHeader.userID[i] = static_cast<char>(copyChar);
+			m_VLRHeader.userID[i] = copyChar;
 		}
 	}
 
@@ -232,16 +232,16 @@ void LasDataWriter::GetVLRHeader(mxArray* pVLRfield, size_t VLRindex) {
 				break;
 			}
 
-			m_VLRHeader.description[i] = static_cast<char>(copyChar);
+			m_VLRHeader.description[i] = copyChar;
 		}
 	}
 
 	// Get header in single char array as it will be written
-	std::memcpy(m_VLRHeader.vlrhBytes,      &m_VLRHeader.reserved,  2 * sizeof(char));
-	std::memcpy(m_VLRHeader.vlrhBytes +  2, &m_VLRHeader.userID,   16 * sizeof(char));
-	std::memcpy(m_VLRHeader.vlrhBytes + 18, &m_VLRHeader.recordID,  2 * sizeof(char));
-	std::memcpy(m_VLRHeader.vlrhBytes + 20, &m_VLRHeader.recordLengthAfterHeader, 2 * sizeof(char));
-	std::memcpy(m_VLRHeader.vlrhBytes + 22, &m_VLRHeader.description, 32 * sizeof(char));
+	std::memcpy(m_VLRHeader.vlrhBytes,      &m_VLRHeader.reserved,  2);
+	std::memcpy(m_VLRHeader.vlrhBytes +  2, &m_VLRHeader.userID,   16);
+	std::memcpy(m_VLRHeader.vlrhBytes + 18, &m_VLRHeader.recordID,  2);
+	std::memcpy(m_VLRHeader.vlrhBytes + 20, &m_VLRHeader.recordLengthAfterHeader, 2);
+	std::memcpy(m_VLRHeader.vlrhBytes + 22, &m_VLRHeader.description, 32);
 }
 
 bool LasDataWriter::WriteVLR(std::ofstream& lasBin, const mxArray* matlabInput)
@@ -260,8 +260,6 @@ bool LasDataWriter::WriteVLR(std::ofstream& lasBin, const mxArray* matlabInput)
 			lasBin.write((char*)dataPointer, m_VLRHeader.recordLengthAfterHeader);
 		}
 	}
-
-	SetCurrentStreamPosAsDataOffset(lasBin);
 
 	return true;
 }
@@ -283,7 +281,7 @@ void LasDataWriter::GetExtVLRHeader(mxArray* pVLRfield, size_t VLRindex) {
 				break;
 			}
 
-			m_ExtVLRHeader.userID[i] = static_cast<char>(copyChar);
+			m_ExtVLRHeader.userID[i] = copyChar;
 		}
 	}
 
@@ -295,16 +293,16 @@ void LasDataWriter::GetExtVLRHeader(mxArray* pVLRfield, size_t VLRindex) {
 				break;
 			}
 
-			m_ExtVLRHeader.description[i] = static_cast<char>(copyChar);
+			m_ExtVLRHeader.description[i] = copyChar;
 		}
 	}
 
 	// Get header in single char array as it will be written
-	std::memcpy(m_ExtVLRHeader.extvlrhBytes, &m_ExtVLRHeader.reserved, 2 * sizeof(char));
-	std::memcpy(m_ExtVLRHeader.extvlrhBytes + 2, &m_ExtVLRHeader.userID, 16 * sizeof(char));
-	std::memcpy(m_ExtVLRHeader.extvlrhBytes + 18, &m_ExtVLRHeader.recordID, 2 * sizeof(char));
-	std::memcpy(m_ExtVLRHeader.extvlrhBytes + 20, &m_ExtVLRHeader.recordLengthAfterHeader, 8 * sizeof(char));
-	std::memcpy(m_ExtVLRHeader.extvlrhBytes + 28, &m_ExtVLRHeader.description, 32 * sizeof(char));
+	std::memcpy(m_ExtVLRHeader.extvlrhBytes, &m_ExtVLRHeader.reserved, 2);
+	std::memcpy(m_ExtVLRHeader.extvlrhBytes + 2, &m_ExtVLRHeader.userID, 16);
+	std::memcpy(m_ExtVLRHeader.extvlrhBytes + 18, &m_ExtVLRHeader.recordID, 2);
+	std::memcpy(m_ExtVLRHeader.extvlrhBytes + 20, &m_ExtVLRHeader.recordLengthAfterHeader, 8);
+	std::memcpy(m_ExtVLRHeader.extvlrhBytes + 28, &m_ExtVLRHeader.description, 32);
 }
 
 bool LasDataWriter::WriteExtVLR(std::ofstream& lasBin, const mxArray* matlabInput)
@@ -325,18 +323,4 @@ bool LasDataWriter::WriteExtVLR(std::ofstream& lasBin, const mxArray* matlabInpu
 	}
 
 	return true;
-}
-
-void LasDataWriter::SetCurrentStreamPosAsDataOffset(std::ofstream& lasBin)
-{
-	std::streampos currentStreampos = lasBin.tellp();
-
-	if (static_cast<unsigned short>(currentStreampos) != m_header.offsetToPointData)
-	{
-		mexWarnMsgIdAndTxt("MEX:SetCurrentStreamPosAsOffset:new_streampos", "Offset to Point Data was Updated!");
-		lasBin.seekp(96, lasBin.beg);
-		m_header.offsetToPointData = static_cast<unsigned long>(currentStreampos);
-		lasBin.write((char*)&m_header.offsetToPointData, sizeof(unsigned long));
-		lasBin.seekp(currentStreampos, lasBin.beg);
-	}
 }
