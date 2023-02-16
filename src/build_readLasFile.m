@@ -22,8 +22,8 @@
 %       useCompilerOptions : Set true to use the set compiler_flags
 %
 % Compilation example:
-% mex -R2018a readLasFile_cpp.cpp LAS_IO.cpp LasReader.cpp
-% VariableLengthRecords.cpp LASAlloc.cpp -outdir ../lib/mex
+% mex -R2018a readLASfile_cpp.cpp LAS_IO.cpp LasReader.cpp
+% VariableLengthRecords.cpp LASAllocation.cpp -outdir ../lib/mex
 %
 %% ------------------------------------------------------------------------
 % User Input
@@ -63,11 +63,11 @@ if useCompilerFlags
 end
 
 % Print chosen options
-fprintf(1, 'Compiler Input: %s\n', [interleaveOpts, ' ', verboseFlag, ' ', debugFlag, ' ', combinedFlag, ' ', 'readLasFile_cpp.cpp', ' ',...
-           'LAS_IO.cpp', ' ', 'LasReader.cpp', ' ',  'VariableLengthRecords.cpp', ' ', 'LASAlloc.cpp', ' ',  '-outdir', ' ',  outdir]);
+fprintf(1, 'Compiler Input: %s\n', [interleaveOpts, ' ', verboseFlag, ' ', debugFlag, ' ', combinedFlag, ' ', 'readLASfile_cpp.cpp', ' ',...
+           'LAS_IO.cpp', ' ', 'LasReader.cpp', ' ',  'VariableLengthRecords.cpp', ' ', 'LASAllocation.cpp', ' ',  '-outdir', ' ',  outdir]);
 
 % Compile File
-mex(interleaveOpts, verboseFlag, debugFlag, combinedFlag, 'readLasFile_cpp.cpp', 'LAS_IO.cpp',...
-    'LasReader.cpp', 'VariableLengthRecords.cpp', 'LASAlloc.cpp', '-outdir', outdir)
+mex(interleaveOpts, verboseFlag, debugFlag, combinedFlag, 'readLASfile_cpp.cpp', 'LAS_IO.cpp',...
+    'LasReader.cpp', 'VariableLengthRecords.cpp', 'LASAllocation.cpp', '-outdir', outdir)
 
 fprintf('-------------------------------------------------------------\n');

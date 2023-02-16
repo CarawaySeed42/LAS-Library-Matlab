@@ -1,9 +1,10 @@
-%% sample_AddCRS_WKT
+%% sample_Add_CRS_WKT
 % This is a sample script to demonstrate how to add an OGC Coordinate
-% System WKT record as a variabel length record. As the name implies, 
+% System WKT record as a variable length record. As the name implies, 
 % the record stores information about the coordinate system in 
 % Well Know Text format. 
-% WKT replaced GeoTIFF in newer LAS minor versions.
+% WKT replaced GeoTIFF in newer LAS minor versions. If you want to write
+% GeoTiff, then you fully have to create it yourself
 %
 % In this example the WKT Definition of ETRS89/UTM zone 32N, EPSG:25832
 % will be written as CRS information
@@ -19,7 +20,7 @@ mpath = mfilename('fullpath');
 lasFilePath = fullfile(path,'sample.las');
 fprintf('     Reading File: %s\n', lasFilePath);
 
-pcloud = readLasFile(lasFilePath);
+pcloud = readLASfile(lasFilePath);
 
 %% Add WKT definition as a Variable Length Record
 fprintf('     Add CRS Variable Length Record...\n');
@@ -59,7 +60,7 @@ outPath = fullfile(targetDir, 'sample_CRS_WKT.las');
 
 % Write the new file
 fprintf('     Writing File: %s\n', outPath);
-writeLasFile(pcloud_modified, outPath);
+writeLASfile(pcloud_modified, outPath);
 
 % Finished. We added two extra byte values per point of data type single.
 % Our Point Data Record Length has grown to 28 bytes per record (20 + 2*4)

@@ -18,14 +18,14 @@ fprintf('     Reading File: %s\n', lasFilePath);
 
 % In this example we read the header and VLRs first to check if Extrabytes
 % are present. Extrabytes have the record_id 4 assigned to them.
-pcloud = readLasFile(lasFilePath, 'VLR');
+pcloud = readLASfile(lasFilePath, 'VLR');
 
 if sum([pcloud.variablerecords.record_id] == 4) > 0
     fprintf('       File contains ExtraBytes confirmed!\n');
 end
 
 % Then we read the whole file
-pcloud = readLasFile(lasFilePath);
+pcloud = readLASfile(lasFilePath);
 
 % The check for Extrabytes was just a demonstration and is not neccessary.
 % The decoding would fail anyway if Extrabytes are missing

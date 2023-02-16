@@ -22,7 +22,7 @@
 %       useCompilerOptions : Set true to use the set compiler_flags
 %
 % Compilation example:
-% mex -R2018a writeLasFile_cpp.cpp LAS_IO.cpp LASWriter.cpp
+% mex -R2018a writeLASfile_cpp.cpp LAS_IO.cpp LASWriter.cpp
 % VariableLengthRecords.cpp -outdir ../lib/mex
 %
 %% ------------------------------------------------------------------------
@@ -63,11 +63,11 @@ if useCompilerFlags
 end
 
 % Print chosen options
-fprintf(1, 'Compiler Input: %s\n', [interleaveOpts, ' ', verboseFlag, ' ', debugFlag, ' ', combinedFlag, ' ', 'writeLasFile_cpp.cpp', ' ',...
+fprintf(1, 'Compiler Input: %s\n', [interleaveOpts, ' ', verboseFlag, ' ', debugFlag, ' ', combinedFlag, ' ', 'writeLASfile_cpp.cpp', ' ',...
            'LAS_IO.cpp', ' ', 'LASWriter.cpp', ' ',  'VariableLengthRecords.cpp', ' ',  '-outdir', ' ',  outdir]);
 
 % Compile File
-mex(interleaveOpts, verboseFlag, debugFlag, combinedFlag, 'writeLasFile_cpp.cpp', 'LAS_IO.cpp',...
+mex(interleaveOpts, verboseFlag, debugFlag, combinedFlag, 'writeLASfile_cpp.cpp', 'LAS_IO.cpp',...
     'LASWriter.cpp', 'VariableLengthRecords.cpp', '-outdir', outdir)
 
 fprintf('-------------------------------------------------------------\n');

@@ -7,9 +7,12 @@
 % will be used
 %% Choose the target directory containing LAS-Files
 
-targetDirectory = 'D:\SampleFolderPlaceholder';
+targetDirectory = uigetdir(mfilename('fullpath'), 'Choose a folder containing LAS files');
 
-if isempty(targetDirectory) || ~exist(targetDirectory, 'dir')
+if ~targetDirectory
+    error('No directory selected!')
+end
+if ~exist(targetDirectory, 'dir')
     [targetDirectory, ~, ~] = fileparts(mfilename('fullpath'));
 end
 
@@ -29,7 +32,7 @@ tic;
 for i = 1:size(lasFiles, 1)
     
     t1 = toc;
-    pcloud = readLasFile(fullfile(lasFiles(i).folder, lasFiles(i).name));
+    pcloud = readLASfile(fullfile(lasFiles(i).folder, lasFiles(i).name));
     t2 = toc;
     
     fileSize = lasFiles(i).bytes/bytesInMB;

@@ -15,7 +15,7 @@ mpath = mfilename('fullpath');
 lasFilePath = fullfile(path,'sample.las');
 fprintf('     Reading File: %s\n', lasFilePath);
 
-pcloud = readLasFile(lasFilePath);
+pcloud = readLASfile(lasFilePath);
 
 % As an example we will add the X,Y difference to the mean point coordinate 
 % as two extrabytes (dx, dy)
@@ -78,7 +78,7 @@ outPath = fullfile(targetDir, 'sample_extrabytes.las');
 
 % Write the new file
 fprintf('     Writing File: %s\n', outPath);
-writeLasFile(pcloud_modified, outPath, 1, 3, pcloud_modified.header.point_data_format);
+writeLASfile(pcloud_modified, outPath, 1, 3, pcloud_modified.header.point_data_format);
 
 % Finished. We added two extra byte values per point of data type single.
 % Our Point Data Record Length has grown to 28 bytes per record (20 + 2*4)
