@@ -62,9 +62,9 @@ classdef Extrabytes < dynamicprops
                 obj.(field_name).descriptor.deprecated2 = uint8(zeros(1,16));    % 16 Bytes
                 obj.(field_name).descriptor.max         = uint64(0);             % 8 Bytes any type
                 obj.(field_name).descriptor.deprecated3 = uint8(zeros(1,16));    % 16 Bytes
-                obj.(field_name).descriptor.scale       = double(zeros(1,8));    % 8 Bytes
+                obj.(field_name).descriptor.scale       = double(0);             % 8 Bytes
                 obj.(field_name).descriptor.deprecated4 = uint8(zeros(1,16));    % 16 Bytes
-                obj.(field_name).descriptor.offset      = double(zeros(1,8));    % 8 Bytes
+                obj.(field_name).descriptor.offset      = double(0);             % 8 Bytes
                 obj.(field_name).descriptor.deprecated5 = uint8(zeros(1,16));    % 16 Bytes
                 obj.(field_name).descriptor.description = char(zeros(1,32));     % 32 Bytes
                 

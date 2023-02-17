@@ -13,7 +13,8 @@ function las = newPointCloud(versionMinor)
 %       las [struct]           : Structure that is writable to LAS file
 %
 %   The default Version Minor, if function is called with no arguments, is
-%   four. This has the most versatility
+%   four. This has the most versatility but is overkill for most
+%   applications
 
 if nargin == 0
     versionMinor = 4;
@@ -44,7 +45,12 @@ las.header.number_of_variable_records           =        0;
 las.header.point_data_format                    =        0;        
 las.header.point_data_record_length             =        20;        
 las.header.number_of_point_records              =        0;
-las.header.number_of_points_by_return           =        [0;0;0;0;0];
+
+if versionMinor > 3
+    las.header.number_of_points_by_return       =   zeros(15,1);
+else
+    las.header.number_of_points_by_return           =   zeros(5,1);
+end
 
 las.header.scale_factor_x                       =        0.0001;        
 las.header.scale_factor_y                       =        0.0001;        
