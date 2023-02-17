@@ -3,19 +3,27 @@
 % point cloud normals in. But we can store inside the extrabyte payload.
 % This sample will give you an example how to do that.
 %
-% The normals will be written as 2-byte uint16 values and are stretched and
-% shifted into that range using the scale and offset fields. This leads to
-% a slight compression and accuracy loss. Run the script to find out by how
-% much the normals change!
-% You could of course just write them as float or double values but where
-% is the fun in that. It also wastes precious storage 
+% The normals will be calculated as double value and stored as 3 * 4 byte
+% single precision values. This leads to a compression by factor 2. 
+% The reduced precision could lead to accuracy loss, but for normals that
+% should not be a problem if they are normalized.
+%
+% The normals could also be written as 3*2 byte uint16 values and are 
+% stretched and shifted into that range using the scale and offset fields. 
+% This leads to a bigger compression and accuracy loss. 
+% Note: This is actually out of spec and might only work with this library.
+% The reason is, that this library assumes that the stored values are
+% floating point values, if a scale factor is involved.
+% This option can be turned on by setting "compressed_out_of_spec" to true
 %
 % For simplicity: Normals will be estimated with the respective Matlab
 % function. This capability was introduced in MATLAB2015b. Older versions
 % will not be able to run this sample. Sorry
 
+compressed_out_of_spec = true;
+
 if verLessThan('matlab', '8.6')
-   error('This script can only be run in Matlab 2015b or newer!') 
+    error('This script can only be run in Matlab 2015b or newer!')
 end
 
 fprintf('\nRun: sample_WritePointNormals\n');
@@ -41,7 +49,7 @@ normals = pcnormals(ptCloud, 100);
 
 % Flip normals that point in the wrong direction
 wrongDir = normals(:,3) < 0;
-normals(wrongDir, :) = -normals(wrongDir, :); 
+normals(wrongDir, :) = -normals(wrongDir, :);
 
 %% Add extrabytes
 fprintf('     Creating Extra Bytes...\n');
@@ -56,24 +64,35 @@ extrabytes.SetData(extrabytes.ExtrabyteNames{3}, normals(:,3));
 %% Set the data type
 % We will choose the data type uint16 which takes up 2 byte per
 % value. This will lead to lossy compression
-extrabytes.SetDataType(extrabytes.ExtrabyteNames, 'uint16');
+if compressed_out_of_spec
+    extrabytes.SetDataType(extrabytes.ExtrabyteNames, 'uint16');
+else
+    extrabytes.SetDataType(extrabytes.ExtrabyteNames, 'single');
+end
 
 %% Set No Data, Min, Max, Offset and Scale
 % No_Data, Min and Max will not be set, because we have no No_Data value
 % and Min and Max are not neccessarily representable in this compressed
 % state. But they have to be written in its raw form by specification
-% For example: Negative Values can not be represented as uint16 
+% For example: Negative Values can not be represented as uint16
 for i = 1:length(extrabytes.ExtrabyteNames)
     field_name = extrabytes.ExtrabyteNames{i};
-%     extrabytes.SetNoData(field_name, 0);
-%     extrabytes.SetMin(field_name, 0);
-%     extrabytes.SetMax(field_name, 0);
-    extrabytes.SetOffset(field_name, -1);
-    extrabytes.SetScale(field_name, 1/(2^15-1))
+    extrabytes.SetNoData(field_name, 0);
+    if ~compressed_out_of_spec
+        extrabytes.SetMin(field_name, min(extrabytes.(field_name).decoded_data));
+        extrabytes.SetMax(field_name, max(extrabytes.(field_name).decoded_data));
+    else
+        extrabytes.SetOffset(field_name, -1);
+        extrabytes.SetScale(field_name, 1/(2^15-1))
+    end
 end
 
 % Set No_Data, Min and Max bit to false, set Offset and Scale bit to true
-extrabytes.SetOptions(extrabytes.ExtrabyteNames, false, false, false, true, true);
+if ~compressed_out_of_spec
+    extrabytes.SetOptions(extrabytes.ExtrabyteNames, false, true, true, false, false);
+else
+    extrabytes.SetOptions(extrabytes.ExtrabyteNames, false, false, false, true, true);
+end
 
 % Additionally to the name we can add a little description for our extra
 % bytes
