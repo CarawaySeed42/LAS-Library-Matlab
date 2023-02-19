@@ -209,8 +209,8 @@ void LasDataReader::AllocateOutputStruct(mxArray*& plhs, std::ifstream& lasBin) 
 		mxSetField(plhs, 0, "intensity", pointerTocurrentMXArray);
 		m_mxStructPointer.pIntensity = GetUint16(pointerTocurrentMXArray);
 		
-		// If unsafeRead is used then return because we only read xyz and intensity
-		if (unsafeRead) { return; }
+		// If m_XYZIntOnly is used then return because we only read xyz and intensity
+		if (m_XYZIntOnly) { return; }
 
 		pointerTocurrentMXArray = mxCreateNumericMatrix((mwSize)m_numberOfPointsToRead, 1, mxUINT8_CLASS, mxREAL);
 		mxSetField(plhs, 0, "bits", pointerTocurrentMXArray);

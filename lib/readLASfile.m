@@ -22,6 +22,7 @@ function lasStruct = readLASfile(lasFilePath, optsString)
 % optsString:   'LoadOnlyHeader' - Fill header struct only
 %               'VLR'			 - Get header and variable length records
 %                                  Does not include extended VLRs
+%               'XYZInt'         - Loads header, VLR, X, Y, Z and intensities
 %               'LoadAll'        - Loads all of the point data
 %                                  (same as with only one given input)
 % 

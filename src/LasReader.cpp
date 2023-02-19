@@ -1,4 +1,5 @@
 #include "LAS_IO.cpp"
+#include "ThreadPool.cpp"
 #include <cstring>
 #include <memory>
 
@@ -143,7 +144,7 @@ void LasDataReader::ReadPointData(std::ifstream& lasBin)
 	lasBin.seekg(m_header.offsetToPointData, lasBin.beg);
 
 	// If unsafe Read then read coordinates and intensities and return early
-	if (unsafeRead) {
+	if (m_XYZIntOnly) {
 
 		// Since we only read XYZ and Intensities, we have to shift the pointer to the start of the next point. XYZInt are 14 Bytes (Example Record Length = 20 -> Shit pointer by 6 bytes to start of next point)
 		int pointerShiftAfterIntensity = m_header.PointDataRecordLength - 14;
@@ -488,7 +489,7 @@ bool LasDataReader::CheckHeaderConsistency(std::ifstream& lasBin)
 
 	if (m_header.PointDataRecordFormat > 10)
 	{
-		unsafeRead = true;
+		m_XYZIntOnly = true;
 		mexWarnMsgIdAndTxt("MEX:CheckHeaderConsistency:NotImplemented", "Point Data Format bigger than 10 is not officialy supported!\n\t\t Reading coordinates and intensities only! This might fail!");
 	}
 
@@ -516,7 +517,7 @@ bool LasDataReader::CheckHeaderConsistency(std::ifstream& lasBin)
 	}
 	else {
 		mexWarnMsgIdAndTxt("MEX:CheckHeaderConsistency:NotImplemented", "PointDataRecordFormat is unknown! Reading coordinates and intensities only! This might fail!");
-		unsafeRead = true;
+		m_XYZIntOnly = true;
 	}
 
 	/* File consistency checks */
@@ -540,5 +541,7 @@ bool LasDataReader::CheckHeaderConsistency(std::ifstream& lasBin)
 	return isHeaderGood;
 }
 
-
+void LasDataReader::SetReadXYZIntOnly(bool m_XYZIntOnly_flag) {
+	m_XYZIntOnly = m_XYZIntOnly_flag;
+}
 

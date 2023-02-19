@@ -60,6 +60,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 	// Flag if reading of the file should stop after header or Variable Length Records
 	bool loadOnlyHeader = false;
 	bool returnAfterVLR = false;
+	bool XYZIntOnly = false;
 
 	if (!mxIsChar(prhs[0])) { // is not char array
 		mexErrMsgIdAndTxt("MEX:readLasFile:typeargin", "Argument has to be path to LAS-File as char array!");
@@ -74,6 +75,10 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 			if (std::strcmp(optionalArgument, "LoadOnlyHeader") == 0)
 			{
 				loadOnlyHeader = true;
+			}
+			else if (std::strcmp(optionalArgument, "XYZInt") == 0)
+			{
+				XYZIntOnly = true;
 			}
 			else if (std::strcmp(optionalArgument, "VLR") == 0)
 			{
@@ -133,6 +138,11 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 			if (returnAfterVLR) {
 				if (lasBin.is_open()) { lasBin.close(); }
 				return;
+			}
+
+			// Allocate and read XYZ and intensity only, if specified
+			if (XYZIntOnly) {
+				lasReader.SetReadXYZIntOnly(XYZIntOnly);
 			}
 
 			// Allocate Rest of the Point Data if load only header is not chosen

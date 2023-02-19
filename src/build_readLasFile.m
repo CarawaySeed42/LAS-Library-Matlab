@@ -36,6 +36,9 @@ useCompilerFlags = false;
 
 %% -----------------------------------------------------------------------
 fprintf('-------------------------------------------------------------\n');
+% Name of the output file
+outputname = 'readLASfile_cpp.mexw64';
+
 % Translate user settings to compiler options
 debugFlag = '';
 if debug
@@ -64,10 +67,10 @@ end
 
 % Print chosen options
 fprintf(1, 'Compiler Input: %s\n', [interleaveOpts, ' ', verboseFlag, ' ', debugFlag, ' ', combinedFlag, ' ', 'readLASfile_cpp.cpp', ' ',...
-           'LAS_IO.cpp', ' ', 'LasReader.cpp', ' ',  'VariableLengthRecords.cpp', ' ', 'LASAllocation.cpp', ' ',  '-outdir', ' ',  outdir]);
+           'LAS_IO.cpp', ' ', 'LASReader.cpp', ' ',  'VariableLengthRecords.cpp', ' ', 'LASAllocation.cpp', ' -outdir ',  outdir, ' -output ', outputname]);
 
 % Compile File
 mex(interleaveOpts, verboseFlag, debugFlag, combinedFlag, 'readLASfile_cpp.cpp', 'LAS_IO.cpp',...
-    'LasReader.cpp', 'VariableLengthRecords.cpp', 'LASAllocation.cpp', '-outdir', outdir)
+    'LASReader.cpp', 'VariableLengthRecords.cpp', 'LASAllocation.cpp', '-outdir', outdir, '-output', outputname)
 
 fprintf('-------------------------------------------------------------\n');

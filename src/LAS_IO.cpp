@@ -232,8 +232,8 @@ private:
 	const size_t m_record_lengths_size = m_record_lengths.size();
 	const unsigned short m_minAllowedRecordLength    = 20;
 
-	//Flag for unsafe reading if point data record format is not supported or point data record length is smaller than specification for pdrf
-	bool unsafeRead = false;
+	//Flag for reading of XYZ and intensity only, if specified by user, point data record format is not supported or point data record length is smaller than specification for pdrf
+	bool m_XYZIntOnly = false;
 
 	/// <summary>
 	/// Reads one Variable Length Record Header from file to class member m_VLRHeader. The ifstream position has to point to the beginning of a variable length record header!
@@ -262,6 +262,8 @@ private:
 	mxArray* createMXExtVLRStruct(mxArray*& plhs);
 
 public:
+
+	void SetReadXYZIntOnly(bool m_XYZIntOnly_flag);
 
 	/// <summary>
 	/// Read Las-File header to class member struct m_header
