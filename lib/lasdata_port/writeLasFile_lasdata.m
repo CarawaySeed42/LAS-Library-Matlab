@@ -48,16 +48,6 @@ function obj = writeLasFile_lasdata(obj, filename, majorversion, minorversion, p
 
 MException = []; % Empty Matlab Exception
 try
-    %prevent overwriting
-    %if you like to overwrite files, then disable check
-    %         [pathtmp,filetmp,ext]=fileparts(obj.filename);
-    %         if isempty(pathtmp); pathtmp = pwd; end
-    %         orgfile = [pathtmp '/' filetmp ext];
-    %         newfile = [pathtmp '/' filetmp ext];
-    %
-    %         if strcmpi(orgfile,newfile)
-    %             error('Overwriting is not allowed.')
-    %         end
     
     % Create output directory if doesn't exist (isdir for backwards comp)
     [pathtmp,~,ext]=fileparts(filename);
@@ -65,7 +55,7 @@ try
         mkdir(pathtmp);
     end 
     if ~strcmp(ext,'.las')
-       error('writeStruct2las: Output File does not have extension .las !');
+       error('writeLasFile_lasdata: Output File does not have extension .las !');
     end
     
     % Provide backwards compatibility to writeLas from lasdata
