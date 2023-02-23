@@ -1,6 +1,7 @@
 %% sample_ReadAndWriteFile
 % This is a sample script to demonstrate how to read a LAS-File and then
 % write it as a different point data format
+fprintf('-------------------------------------------------------------\n');
 fprintf('\nRun: sample_ReadAndWriteFile\n');
 
 %% Add required paths
@@ -43,3 +44,4 @@ writeLASfile(pcloud, outPath, 1, 3, 0);
 
 %% Read new LAS-File again to check the results
 pcloud_new = readLASfile(outPath);
+fprintf('-------------------------------------------------------------\n');
