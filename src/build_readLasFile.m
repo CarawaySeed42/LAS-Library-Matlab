@@ -37,7 +37,7 @@ useCompilerFlags = false;
 %% -----------------------------------------------------------------------
 fprintf('-------------------------------------------------------------\n');
 % Name of the output file
-outputname = 'readLASfile_cpp.mexw64';
+outputname = 'readLASfile_cpp';
 
 % Translate user settings to compiler options
 debugFlag = '';
