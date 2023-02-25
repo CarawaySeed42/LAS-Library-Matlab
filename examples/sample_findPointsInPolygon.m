@@ -43,10 +43,22 @@ fprintf('     Find points in circle approximating polygon...\n');
 tic;
 isInside = isPointInPolygon(polyX, polyY, pcloud.x, pcloud.y, 1);
 t1 = toc;
+isInsideAccumulation = isInside;
 
 fprintf('     Number of vertices of polygon: %d points\n', length(polyX));
 fprintf('     Number of points in polygon: %d of %d points\n', sum(isInside), length(isInside));
 
+%% Multi-threaded point search
+fprintf('     Find points in polygon with multithreading and %d threads...\n\n', numberOfThreads);
+t2 = toc;
+isInside = isPointInPolygon(polyX, polyY, pcloud.x, pcloud.y, numberOfThreads);
+t3 = toc-t2;
+isInsideAccumulation = isInsideAccumulation | isInside;
+
+fprintf('     Execution Time (Single Threaded)\t\t\t: %6.1fms\n', t1*1000);
+fprintf('     Execution Time (Multi Threaded) \t\t\t: %6.1fms\n', t3*1000);
+
+%% Show Results
 figure; 
 plot(polyX, polyY, '-b'), hold on
 plot(pcloud.x(~isInside), pcloud.y(~isInside), '.r');
@@ -57,19 +69,19 @@ xlabel('X-Coordinate [m]')
 xlabel('Y-Coordinate [m]')
 legend('Search Polygon', 'Points outside Polygon', 'Points inside Polygon')
 
-%% Multi-threaded point search
-fprintf('     Find points in polygon with multithreading and %d threads...\n\n', numberOfThreads);
-t2 = toc;
-isInside = isPointInPolygon(polyX, polyY, pcloud.x, pcloud.y, numberOfThreads);
-t3 = toc-t2;
-
-fprintf('     Execution Time (Single Threaded)\t\t\t: %6.1fms\n', t1*1000);
-fprintf('     Execution Time (Multi Threaded) \t\t\t: %6.1fms\n', t3*1000);
-
 %% Comparison to built-in matlab function
 t4 = toc;
 isInside = inpolygon(pcloud.x, pcloud.y, polyX, polyY);
 t5 = toc-t4;
 
+% Compare previous results to last result
+isInsideAccumulation = isInsideAccumulation == isInside;
+
 fprintf('     Execution Time (Built-In Matlab Function) \t: %6.1fms\n', t5*1000);
 fprintf('-------------------------------------------------------------\n');
+
+if all(isInsideAccumulation)
+    fprintf('     All methods returned the same result\n');
+else
+    fprintf('     Methods returned different results! Output is not identical!\n');
+end

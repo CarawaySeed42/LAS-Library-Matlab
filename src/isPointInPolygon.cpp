@@ -18,10 +18,10 @@ inline bool isPointInPolygon(const double* polyX, const double* polyY, const dou
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 
-	int i;
-	const double* polyX, * polyY, * pointsX, * pointsY;
-	polyX = polyY = pointsX = pointsY = nullptr;
-	int numberOfThreads = 1;
+	int i;															// Loop index
+	const double* __restrict polyX, * polyY, * pointsX, * pointsY;	// Pointer to input data
+	polyX = polyY = pointsX = pointsY = nullptr;					
+	int numberOfThreads = 1;										// Number of processing threads
 
 	if (nrhs != 4 && nrhs != 5) {
 		mexErrMsgIdAndTxt("MEX:isPointInPolygon:nargin", "This function allows four or five input arguments!");
@@ -46,16 +46,21 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 	}
 
 	// Get data sizes and check them
-	size_t size_polyX	= mxGetNumberOfElements(prhs[0]);
-	size_t size_polyY	= mxGetNumberOfElements(prhs[1]);
-	size_t size_pointsX = mxGetNumberOfElements(prhs[2]);
-	size_t size_pointsY = mxGetNumberOfElements(prhs[3]);
+	const size_t size_polyX	= mxGetNumberOfElements(prhs[0]);	// Number of Polygon X - Coordinates
+	const size_t size_polyY	= mxGetNumberOfElements(prhs[1]);	// Number of Polygon Y - Coordinates
+	const size_t size_pointsX = mxGetNumberOfElements(prhs[2]);	// Number of Point Data X - Coordinates
+	const size_t size_pointsY = mxGetNumberOfElements(prhs[3]); // Number of Point Data Y- Coordinates
 
 	if (size_polyX != size_polyY || size_polyX < 1) {
 		mexErrMsgIdAndTxt("MEX:isPointInPolygon:sizeargin", "Input polygon has to be of same size and larger than a size of zero!");
 	}
 	if (size_pointsX != size_pointsY || size_pointsX < 1) {
 		mexErrMsgIdAndTxt("MEX:isPointInPolygon:sizeargin", "Input points have to be of same size and larger than a size of zero!");
+	}
+
+	// If input cloud or polygon has more than INT32_MAX points then cancel, because not implemented
+	if (size_pointsX > INT32_MAX || size_polyX > INT32_MAX) {
+		mexErrMsgIdAndTxt("MEX:isPointInPolygon:sizeargin", "Input with more elements than %d not implemented!", INT32_MAX);
 	}
 
 	// Get Data
@@ -73,6 +78,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 	plhs[0] = mxCreateLogicalMatrix(size_pointsX, 1);
 	mxLogical* result = mxGetLogicals(plhs[0]);
 
+	
 	// Chunksize is chosen in a way that every thread gets 50 chunks, this might help to distribute the load a little bit
 	const int threadChunksize = static_cast<int>((size_pointsX / (static_cast<size_t>(numberOfThreads)*50)) + 1); 
 	omp_set_num_threads(numberOfThreads);
@@ -85,18 +91,17 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 }
 
 
-inline bool isPointInPolygon(const double* const polyX, const double* const polyY, const double& pointX, const double& pointY, const int& polyCount)
+inline bool isPointInPolygon(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount)
 {
 	bool inside = false;
 
-	for (int i = 0, j = polyCount - 1; i < polyCount; i++) { 
+	for (int i = 0, j = polyCount - 1; i < polyCount; j = i++) {
 		if (((polyY[i] > pointY) != (polyY[j] > pointY)) 
 			&& (pointX < (polyX[j] - polyX[i]) * (pointY - polyY[i]) / (polyY[j] - polyY[i]) + polyX[i])) 
 		{
 			// Invert inside
 			inside = !inside;
 		}
-		j = i;
 	}
 
 	return inside;
