@@ -4,7 +4,7 @@ function isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads)
 % Finds 2D points inside and outside of a 2D polygon using the 
 % Raycasting Algorithm.
 % Supports multithreading that kicks in if more than 1e4 points or more
-% than 150 polygon vertices are to be processed. The fucntion has to be
+% than 150 polygon vertices are to be processed. The function has to be
 % compiled with 'parallel_computing = true'. The number of threads can
 % be specified, but they will automatically be limited to the number of
 % available concurrent threads of the CPU, if the number is too big.
@@ -20,7 +20,7 @@ function isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads)
 %                                       false if point is outside poylgon
 %			
 % This file uses the extension .mexw64.
-% Built in Matlab 2019b with MSVC 2019
+% Originally built in Matlab 2019b with MSVC 2019
 %
 % Source:		 isPointInPolygon.cpp
 %

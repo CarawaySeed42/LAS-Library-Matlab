@@ -1,8 +1,8 @@
 % This script compiles the isPointInPolygon mex file
 % Can be compiled with Microsoft Visual C++ 2019 (and likely newer)
 % and latest MinGW-w64 Compiler. Tested on Windows 10 x64 platform!
-% C++11 is minimum requirement!
-% Other compilers will probably work but have not been tested.
+% C++11 is minimum requirement! 
+% If you use MinGW then you have to link the OpenMP library. See settings!
 % For available compilers enter the folling into the matlab command window:
 %   mex -setup cpp
 %
@@ -15,7 +15,9 @@
 %       verbose            : Set true to show verbose compilation log
 %       parallel_computing : Set OpenMP compiler flag for parfor?
 %
+%       minGW_openMP_link  : Path to MinGW OpenMP lib on your PC 
 %
+% Advice: According to my testing MSVC should be preferred to MinGW.
 %% ------------------------------------------------------------------------
 % User Input
 outdir = '../lib/mex';
@@ -23,6 +25,8 @@ debug = false;
 UseInterleavedComplexAPI = false;
 verbose = false;
 parallel_computing = true;
+
+minGW_openMP_link = 'C:\mingw64\lib\gcc\x86_64-w64-mingw32\12.2.0\libgomp.a';
 
 %% -----------------------------------------------------------------------
 fprintf('-------------------------------------------------------------\n');
@@ -50,6 +54,13 @@ if UseInterleavedComplexAPI
     end
 end
 
+% check compiler options for set compiler
+CPPcompiler = mex.getCompilerConfigurations('C++','Selected');
+compilerIsMinGW = strfind(lower(CPPcompiler.ShortName), lower('MinGW'));
+if isempty(compilerIsMinGW)
+    minGW_openMP_link = '';
+end
+
 CFLAGS = '';
 if parallel_computing
     if ismac
@@ -67,11 +78,11 @@ if parallel_computing
 end
 
 % Print chosen options
-fprintf(1, 'Compiler Input: %s\n', [interleaveOpts, ' ', verboseFlag, ' ', debugFlag, ' ', CFLAGS, ' ', 'isPointInPolygon.cpp', ' ',...
-           ' -outdir ',  outdir, ' -output ', outputname]);
+fprintf(1, 'Compiler Input: %s\n', [minGW_openMP_link, ' ',interleaveOpts, ' ', verboseFlag, ' ', debugFlag, ' ', CFLAGS, ' ', ...
+           'isPointInPolygon.cpp', ' ',' -outdir ',  outdir, ' -output ', outputname]);
 
 % Compile File
-mex(interleaveOpts, verboseFlag, debugFlag, CFLAGS, 'isPointInPolygon.cpp',...
+mex(minGW_openMP_link, interleaveOpts, verboseFlag, debugFlag, CFLAGS, 'isPointInPolygon.cpp',...
     '-outdir', outdir, '-output', outputname)
 
 fprintf('-------------------------------------------------------------\n');

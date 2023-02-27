@@ -35,8 +35,8 @@ pcloud = readLASfile(lasFilePath);
 %% Create query polygon by approximating a circle
 fprintf('     Create Polygon...\n');
 vertexNumberToCircleScale = numberOfVertices/360;
-polyX = mean(pcloud.x) + (sind((1:numberOfVertices)/11) * 0.2)';
-polyY = mean(pcloud.y) + (cosd((1:numberOfVertices)/11) * 0.2)';
+polyX = mean(pcloud.x) + (sind((1:numberOfVertices)/vertexNumberToCircleScale) * 0.2)';
+polyY = mean(pcloud.y) + (cosd((1:numberOfVertices)/vertexNumberToCircleScale) * 0.2)';
 
 %% Find points in polygon
 fprintf('     Find points in circle approximating polygon...\n');

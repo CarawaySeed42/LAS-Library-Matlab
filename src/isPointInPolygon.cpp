@@ -1,6 +1,4 @@
 #include "mex.h"
-#include <stdio.h> // standard input/output
-#include <vector> // stl vector header
 #include <thread>
 #include <omp.h>
 
@@ -14,7 +12,7 @@
 
 #endif
 
-inline bool isPointInPolygon(const double* polyX, const double* polyY, const double& pointX, const double& pointY, const int& polyCount);
+inline bool isPointInPolygon(const double* __restrict  polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount);
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 
@@ -83,7 +81,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 	const int threadChunksize = static_cast<int>((size_pointsX / (static_cast<size_t>(numberOfThreads)*50)) + 1); 
 	omp_set_num_threads(numberOfThreads);
 
-#pragma omp parallel for schedule(dynamic, threadChunksize) default(shared) if (size_pointsX > 10000 || size_polyX > 150)
+#pragma omp parallel for schedule(dynamic, threadChunksize) default(shared) if (size_pointsX > 10000 || size_polyX > 150) //num_threads(numberOfThreads)
 	for (i = 0; i < size_pointsX; i++) 
 	{
 		result[i] = isPointInPolygon(polyX, polyY, pointsX[i], pointsY[i], size_polyX);
