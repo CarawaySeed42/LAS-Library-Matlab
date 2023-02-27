@@ -10,7 +10,26 @@ classdef Extrabytes < dynamicprops
         ExtrabyteNames = {}
     end
     
-    methods
+    methods (Access = private)
+        function SetRawOptionsBit(obj, extrabyte_name, bit_number, value)
+            %SetRawOptionsBit  Encode the value of at a certain bit to the
+            %                 raw options field of an extrabyte
+            %  SetRawOptionsBit(extrabyte_name, bit_number, value)
+            %  extrabyte_name (string): Name of the extrabyte
+            %  bit_number (int)       : The index of the bit to change
+            %                           (0-based)
+            %  value      (int)       : The new value of the bit
+            %                          0 if value is 0, 1 otherwise
+            value = cast(logical(value), 'uint8');
+            optionsValue = obj.(extrabyte_name).descriptor.options.raw;
+            eraseMask = bitcmp(bitshift(1,bit_number, 'uint8'), 'uint8');
+            setMask = bitshift(value,bit_number, 'uint8');
+            optionsValue = bitand(optionsValue, eraseMask);
+            obj.(extrabyte_name).descriptor.options.raw = bitor(optionsValue, setMask);
+        end
+    end
+    
+    methods (Access = public)
         function obj = Extrabytes(names)
             %Extrabytes    Construct an instance of this class
             %   obj = Extrabytes(names)
@@ -159,32 +178,6 @@ classdef Extrabytes < dynamicprops
             datatype.matlab_type = obj.(name).descriptor.data_type.matlab_type;
             datatype.size        = obj.(name).descriptor.data_type.size;
         end
-        
-        function SetOptions(obj, names, no_data_bit, min_bit, max_bit, scale_bit, offset_bit)
-            %SetOptions Specify if options fields are relevant or not
-            %   SetOptions(names, no_data_bit, min_bit, max_bit, scale_bit, offset_bit)
-            %   Encodes the chosen settings into a single value.
-            %   Input no_data, min, max, scale and offset will be converted
-            %   to logical. If true then the bit will be set to specify
-            %   that this field is relevant for de- and encoding
-            if nargin < 7
-                error('Not enough input arguments')
-            end
-            if ~iscell(names)
-                names = {names};
-            end
-            
-            for i = 1:length(names)
-                field_name = names{i};
-                optionsTmp = logical(no_data_bit)*1 + logical(min_bit)*2 + logical(max_bit)*4 + logical(scale_bit)*8 + logical(offset_bit)*16;
-                obj.(field_name).descriptor.options.raw = uint8(optionsTmp);
-                obj.(field_name).descriptor.options.no_data_bit = logical(no_data_bit);
-                obj.(field_name).descriptor.options.min_bit     = logical(min_bit);
-                obj.(field_name).descriptor.options.max_bit     = logical(max_bit);
-                obj.(field_name).descriptor.options.scale_bit   = logical(scale_bit);
-                obj.(field_name).descriptor.options.offset_bit  = logical(offset_bit);
-            end
-        end
                
         function options = GetOptions(obj, name)
             %GetOptions Get extra byte options regarding no_data, min, max, scale and offset
@@ -268,6 +261,166 @@ classdef Extrabytes < dynamicprops
             %   Gets offset value from descriptor of extra byte called name
             offset = obj.(name).descriptor.offset;
         end
+        
+        function SetOptions(obj, names, no_data_bit, min_bit, max_bit, scale_bit, offset_bit)
+            %SetOptions Specify if options fields are relevant or not
+            %   SetOptions(names, no_data_bit, min_bit, max_bit, scale_bit, offset_bit)
+            %   Encodes the chosen settings into a single value.
+            %   Input no_data, min, max, scale and offset will be converted
+            %   to logical. If true then the bit will be set to specify
+            %   that this field is relevant for de- and encoding
+            if nargin < 7
+                error('Not enough input arguments')
+            end
+            if ~iscell(names)
+                names = {names};
+            end
+            
+            % Turn input to 8-bit values with 1-bit range
+            no_data_bit = uint8(logical(no_data_bit));
+            min_bit = uint8(logical(min_bit));
+            max_bit = uint8(logical(max_bit));
+            scale_bit = uint8(logical(scale_bit));
+            offset_bit = uint8(logical(offset_bit));
+            
+            for i = 1:length(names)
+                field_name = names{i};
+                obj.(field_name).descriptor.options.raw = uint8(no_data_bit*1 + min_bit*2 + max_bit*4 + scale_bit*8 + offset_bit*16);
+                obj.(field_name).descriptor.options.no_data_bit = no_data_bit;
+                obj.(field_name).descriptor.options.min_bit     = min_bit;
+                obj.(field_name).descriptor.options.max_bit     = max_bit;
+                obj.(field_name).descriptor.options.scale_bit   = scale_bit;
+                obj.(field_name).descriptor.options.offset_bit  = offset_bit;
+            end
+        end
+        
+        function SetNoDataBit(obj, names, no_data_bit)
+            %SetNoDataBit Specify if NoDataBit is relevant
+            %   SetNoDataBit(names, no_data_bit)
+            %   Input no_data is converted to logical. 
+            %   If true then the bit will be set to specify
+            %   that this field is relevant for de- and encoding
+            %   names specifies the names of the extrabytes
+            if ~iscell(names)
+                names = {names};
+            end
+            
+            no_data_bit = cast(logical(no_data_bit),'uint8');
+            bit_number = 0;
+            
+            for i = 1:length(names)
+                field_name = names{i};
+                SetRawOptionsBit(obj, field_name, bit_number, no_data_bit);
+                obj.(field_name).descriptor.options.no_data_bit = no_data_bit;
+            end
+        end
+        
+        function SetMinBit(obj, names, min_bit)
+            %SetMinBit Specify if min_bit is relevant
+            %   SetMinBit(names, min_bit)
+            %   Input min_bit is converted to logical. 
+            %   If true then the bit will be set to specify
+            %   that this field is relevant for de- and encoding
+            %   names specifies the names of the extrabytes
+            if ~iscell(names)
+                names = {names};
+            end
+            
+            min_bit = cast(logical(min_bit),'uint8');
+            bit_number = 1;
+            
+            for i = 1:length(names)
+                field_name = names{i};
+                SetRawOptionsBit(obj, field_name, bit_number, min_bit);
+                obj.(field_name).descriptor.options.min_bit = min_bit;
+            end
+        end
+        
+       function SetMaxBit(obj, names, max_bit)
+            %SetMaxBit Specify if max_bit is relevant
+            %   SetMaxBit(names, max_bit)
+            %   Input max_bit is converted to logical. 
+            %   If true then the bit will be set to specify
+            %   that this field is relevant for de- and encoding
+            %   names specifies the names of the extrabytes
+            if ~iscell(names)
+                names = {names};
+            end
+            
+            max_bit = cast(logical(max_bit),'uint8');
+            bit_number = 2;
+            
+            for i = 1:length(names)
+                field_name = names{i};
+                SetRawOptionsBit(obj, field_name, bit_number, max_bit);
+                obj.(field_name).descriptor.options.max_bit = max_bit;
+            end
+       end
+        
+       function SetScaleBit(obj, names, scale_bit)
+            %SetScaleBit Specify if scale_bit is relevant
+            %   SetScaleBit(names, scale_bit)
+            %   Input scale_bit is converted to logical. 
+            %   If true then the bit will be set to specify
+            %   that this field is relevant for de- and encoding
+            %   names specifies the names of the extrabytes
+            if ~iscell(names)
+                names = {names};
+            end
+            
+            scale_bit = cast(logical(scale_bit),'uint8');
+            bit_number = 3;
+            
+            for i = 1:length(names)
+                field_name = names{i};
+                SetRawOptionsBit(obj, field_name, bit_number, scale_bit);
+                obj.(field_name).descriptor.options.scale_bit = scale_bit;
+            end
+       end
+        
+       function SetOffsetBit(obj, names, offset_bit)
+            %SetOffsetBit Specify if offset_bit is relevant
+            %   SetOffsetBit(names, offset_bit)
+            %   Input offset_bit is converted to logical. 
+            %   If true then the bit will be set to specify
+            %   that this field is relevant for de- and encoding
+            %   names specifies the names of the extrabytes
+            if ~iscell(names)
+                names = {names};
+            end
+            
+            offset_bit = cast(logical(offset_bit),'uint8');
+            bit_number = 4;
+            
+            for i = 1:length(names)
+                field_name = names{i};
+                SetRawOptionsBit(obj, field_name, bit_number, offset_bit);
+                obj.(field_name).descriptor.options.offset_bit = offset_bit;
+            end
+       end
+       
+       function RecalculateRawOptions(obj, names)
+            %RecalculateRawOptions Recalculate raw options value
+            %   RecalculateRawOptions(names)
+            %   Recalculates raw options value from the bit field entries
+            %   In case the raw value and the fields have been tampered
+            %   with and have desynced. This happens by access of the
+            %   fields without using the respective function
+            %   names specifies the names of the extrabytes
+            if ~iscell(names)
+                names = {names};
+            end
+            
+            for i = 1:length(names)
+                field_name = names{i};
+                no_data_bit = uint8(logical(obj.(field_name).descriptor.options.no_data_bit));
+                min_bit = uint8(logical(obj.(field_name).descriptor.options.min_bit));
+                max_bit = uint8(logical(obj.(field_name).descriptor.options.max_bit));
+                scale_bit = uint8(logical(obj.(field_name).descriptor.options.scale_bit));
+                offset_bit = uint8(logical(obj.(field_name).descriptor.options.offset_bit));
+                obj.(field_name).descriptor.options.raw = uint8(no_data_bit*1 + min_bit*2 + max_bit*4 + scale_bit*8 + offset_bit*16);
+            end
+       end
         
         function SetDescription(obj, name, description)
             %SetDescription  Sets the minimum value in extrabytes

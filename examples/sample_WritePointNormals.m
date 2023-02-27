@@ -9,8 +9,8 @@
 % should not be a problem if they are normalized.
 %
 % The normals could also be written as 3*2 byte uint16 values and are 
-% stretched and shifted into that range using the scale and offset fields. 
-% This leads to a bigger compression and accuracy loss. 
+% stretched into that range using the scale field. 
+% This leads to a bigger compression but also accuracy loss. 
 % Note: This is actually out of spec and might only work with this library.
 % The reason is, that this library assumes that the stored values are
 % floating point values, if a scale factor is involved.
@@ -20,7 +20,7 @@
 % function. This capability was introduced in MATLAB2015b. Older versions
 % will not be able to run this sample. Sorry
 
-compressed_out_of_spec = true;
+compressed_out_of_spec = false;
 
 if verLessThan('matlab', '8.6')
     error('This script can only be run in Matlab 2015b or newer!')
@@ -65,16 +65,22 @@ extrabytes.SetData(extrabytes.ExtrabyteNames{3}, normals(:,3));
 % We will choose the data type uint16 which takes up 2 byte per
 % value. This will lead to lossy compression
 if compressed_out_of_spec
-    extrabytes.SetDataType(extrabytes.ExtrabyteNames, 'uint16');
+    extrabytes.SetDataType(extrabytes.ExtrabyteNames, 'int16');
 else
     extrabytes.SetDataType(extrabytes.ExtrabyteNames, 'single');
 end
 
 %% Set No Data, Min, Max, Offset and Scale
-% No_Data, Min and Max will not be set, because we have no No_Data value
-% and Min and Max are not neccessarily representable in this compressed
-% state. But they have to be written in its raw form by specification
-% For example: Negative Values can not be represented as uint16
+% For float (single):
+% Set Min and Max value. Omit No_Data, Scale and Offset because they are
+% unused.
+%
+% For uint16 compression:
+% Min and Max will not be set, because Min and Max are not neccessarily 
+% representable in this compressed state.
+% They would have to be written in their raw form according to specification
+% Problem: We can not express floating point values in this case
+
 for i = 1:length(extrabytes.ExtrabyteNames)
     field_name = extrabytes.ExtrabyteNames{i};
     extrabytes.SetNoData(field_name, 0);
@@ -82,16 +88,18 @@ for i = 1:length(extrabytes.ExtrabyteNames)
         extrabytes.SetMin(field_name, min(extrabytes.(field_name).decoded_data));
         extrabytes.SetMax(field_name, max(extrabytes.(field_name).decoded_data));
     else
-        extrabytes.SetOffset(field_name, -1);
         extrabytes.SetScale(field_name, 1/(2^15-1))
     end
 end
 
-% Set No_Data, Min and Max bit to false, set Offset and Scale bit to true
+% If float set Min and Max bit to true
+% If uint16 then only set  Scale bit to true
+% Two ways to do this are shown here. Either all are set in one 
+% function call or specify each individual option separately
 if ~compressed_out_of_spec
     extrabytes.SetOptions(extrabytes.ExtrabyteNames, false, true, true, false, false);
 else
-    extrabytes.SetOptions(extrabytes.ExtrabyteNames, false, false, false, true, true);
+    extrabytes.SetScaleBit(extrabytes.ExtrabyteNames, true);
 end
 
 % Additionally to the name we can add a little description for our extra
@@ -124,9 +132,9 @@ pcloud_new = readLASfile(outPath);
 extrabytes = decode_extrabytes(pcloud_new);
 
 % Output the maximum deviation of calculated normals and compressed normals
-devX = abs(extrabytes.vX.decoded_data - normals(:,1));
-devY = abs(extrabytes.vY.decoded_data - normals(:,2));
-devZ = abs(extrabytes.vZ.decoded_data - normals(:,3));
+devX = abs(double(extrabytes.vX.decoded_data) - normals(:,1));
+devY = abs(double(extrabytes.vY.decoded_data) - normals(:,2));
+devZ = abs(double(extrabytes.vZ.decoded_data) - normals(:,3));
 maxDeviation = max(max([devX, devY, devZ]));
 
 fprintf('\n     Checking results...!\n');
