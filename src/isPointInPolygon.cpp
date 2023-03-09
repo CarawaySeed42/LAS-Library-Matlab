@@ -12,7 +12,12 @@
 
 #endif
 
-inline bool isPointInPolygon(const double* __restrict  polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount);
+inline bool raycast(const double* __restrict  polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount);
+inline bool windingNumber(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount);
+inline bool windingNumber_borderInside(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount);
+
+template<typename T>
+inline T isLeft(const T polyX_1, const T polyY_1, const T polyX_2, const T polyY_2, const T queryX, const T queryY);
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 
@@ -44,7 +49,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 	}
 
 	// Get data sizes and check them
-	const size_t size_polyX	= mxGetNumberOfElements(prhs[0]);	// Number of Polygon X - Coordinates
+	const int size_polyX	= mxGetNumberOfElements(prhs[0]);	// Number of Polygon X - Coordinates
 	const size_t size_polyY	= mxGetNumberOfElements(prhs[1]);	// Number of Polygon Y - Coordinates
 	const size_t size_pointsX = mxGetNumberOfElements(prhs[2]);	// Number of Point Data X - Coordinates
 	const size_t size_pointsY = mxGetNumberOfElements(prhs[3]); // Number of Point Data Y- Coordinates
@@ -81,15 +86,16 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 	const int threadChunksize = static_cast<int>((size_pointsX / (static_cast<size_t>(numberOfThreads)*50)) + 1); 
 	omp_set_num_threads(numberOfThreads);
 
-#pragma omp parallel for schedule(dynamic, threadChunksize) default(shared) if (size_pointsX > 10000 || size_polyX > 150) //num_threads(numberOfThreads)
+#pragma omp parallel for schedule(dynamic, threadChunksize) default(shared) if (size_pointsX > 10000 || size_polyX > 150)
 	for (i = 0; i < size_pointsX; i++) 
 	{
-		result[i] = isPointInPolygon(polyX, polyY, pointsX[i], pointsY[i], size_polyX);
+		result[i] = windingNumber(polyX, polyY, pointsX[i], pointsY[i], size_polyX);
 	}	
 }
 
-
-inline bool isPointInPolygon(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount)
+// Tests if point is in polygon using the raycast algorithm
+//	Returns: true if point inside polygon, false if otherwise
+inline bool raycast(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount)
 {
 	bool inside = false;
 
@@ -104,3 +110,90 @@ inline bool isPointInPolygon(const double* __restrict polyX, const double* __res
 
 	return inside;
 }
+
+// Tests if a point is Left, Right or On a line
+//    Input:  X and Y of first and second point of line, X and Y of query point
+//    Returns: >0 if query point is left of the line
+//             =0 if query point is on the line
+//             <0 if query point is right of the line
+template<typename T>
+inline T isLeft(const T polyX_1, const T polyY_1, const T polyX_2, const T polyY_2, const T queryX, const T queryY)
+{ 
+	return (queryY - polyY_1) * (polyX_2 - polyX_1) - (queryX - polyX_1) * (polyY_2 - polyY_1);
+};
+
+
+// Tests if the winding number for a query point and a polygon is unequal to zero. 
+// If so then the point is fully inside the polygon
+//	Returns: true if point inside polygon, false if otherwise
+inline bool windingNumber(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount)
+{
+	int winding_num = 0;  // the  winding number counter
+
+	for (int i = 0, j = polyCount - 1; i < polyCount; j = i++)
+	{
+		if (polyY[j] <= pointY) {
+
+			if (pointY < polyY[i]) {
+				if (isLeft(polyX[j], polyY[j], polyX[i], polyY[i], pointX, pointY) > 0)
+				{
+					// If point on the right then increase winding number
+					++winding_num;
+				}
+			}
+		}
+		else { // Ray crosses an downwards line
+			if (polyY[i] <= pointY) {
+				if (isLeft(polyX[j], polyY[j], polyX[i], polyY[i], pointX, pointY) < 0)
+				{
+					// If point on the right then decrease winding number
+					--winding_num;
+				}
+			}
+		}
+	}
+	return winding_num != 0;  // Only if winding_num is 0 then point is outside polygon
+};
+
+// Tests if the winding number for a query point and a polygon is unequal to zero. 
+// If so then the point is inside the polygon or on the border
+//	Returns: true if point inside polygon, false if otherwise
+inline bool windingNumber_borderInside(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount)
+{
+	int winding_num = 0;  // the  winding number counter
+
+	for (int i = 0, j = polyCount - 1; i < polyCount; j = i++) {
+
+		// Early continue if no chance of success
+		if (!((polyY[i] > pointY) != (polyY[j] > pointY)))
+			continue;
+
+		const auto sideOfLine = isLeft(polyX[j], polyY[j], polyX[i], polyY[i], pointX, pointY);
+
+		// Check if the point lies on the polygon.
+		if (sideOfLine == 0) {
+			return true;
+		}
+
+		if (polyY[j] <= pointY) {
+
+			if (pointY < polyY[i]) {
+				if (sideOfLine > 0)
+				{
+					// If point on the right then increase winding number
+					++winding_num;
+				}
+			}
+		}
+		else { // Ray crosses an downwards line
+			if (polyY[i] <= pointY) {
+				if (sideOfLine < 0)
+				{
+					// If point on the right then decrease winding number
+					--winding_num;
+				}
+			}
+		}
+	}
+	return winding_num != 0;  // Only if winding_num is 0 then point is outside polygon
+};
