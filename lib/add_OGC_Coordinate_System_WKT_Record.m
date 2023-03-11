@@ -1,5 +1,5 @@
 function las = add_OGC_Coordinate_System_WKT_Record(las, data)
-%las = add_OGC_Coordinate_System_WKT_Record(las) Add EMPTY CRS VLR to LAS 
+%las = add_OGC_Coordinate_System_WKT_Record(las) Add CRS VLR to LAS 
 %   Adds a OGC Coordinate System WKT Record VLR to a LAS structure.
 %   This function is for CRS info in Well Known Text format (WKT).
 %
@@ -20,7 +20,7 @@ function las = add_OGC_Coordinate_System_WKT_Record(las, data)
 %       las [struct]    : Input LAS structure with added VLR
 %
 %   Caution: If a VLR of this kind already exists, then it will be
-%   overwritten because only one VLR o this kind is allowed per file
+%   overwritten because only one VLR of this kind is allowed per file
 %   If necessary because the payload is too big, then Extended VLR is used
 VLR_index = [];
 ExtVLR_index = [];
