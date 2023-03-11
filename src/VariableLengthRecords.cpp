@@ -1,7 +1,7 @@
 #include "mex.h"
 #include <cstring>
 #include <memory>
-#include "LAS_IO.cpp"
+#include "LAS_IO.hpp"
 
 #if MX_HAS_INTERLEAVED_COMPLEX
 

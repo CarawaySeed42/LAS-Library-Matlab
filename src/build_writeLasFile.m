@@ -70,7 +70,7 @@ fprintf(1, 'Compiler Input: %s\n', [interleaveOpts, ' ', verboseFlag, ' ', debug
            'LAS_IO.cpp', ' ', 'LASWriter.cpp', ' ',  'VariableLengthRecords.cpp', ' ',  '-outdir ',  outdir, ' -output ', outputname]);
 
 % Compile File
-mex(interleaveOpts, verboseFlag, debugFlag, combinedFlag, 'writeLASfile_cpp.cpp', 'LAS_IO.cpp',...
+mex(interleaveOpts, verboseFlag, debugFlag, combinedFlag, 'writeLASfile_cpp.cpp',...
     'LASWriter.cpp', 'VariableLengthRecords.cpp', '-outdir', outdir, '-output', outputname)
 
 fprintf('-------------------------------------------------------------\n');

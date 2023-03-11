@@ -43,7 +43,7 @@
 #include "mex.h"
 #include <fstream>
 #include <cstring>
-#include "LAS_IO.cpp"
+#include "LAS_IO.hpp"
 
 /* The gateway function. */
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {

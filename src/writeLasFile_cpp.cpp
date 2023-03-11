@@ -1,8 +1,8 @@
 /*%==========================================================
-% readLas2Struct.mexw64 - MEX-File
-% lasStruct = writeLASFile_mex(las, filename, majorversion, minorversion, pointformat)
-% lasStruct = readLasFile(lasFilePath, optsString)
-% 
+% function lasStruct = readLasFile(lasFilePath)
+% or       lasStruct = readLasFile(lasFilePath, optsString)
+%
+% Supports Versions LAS 1.1 - 1.4
 % Supports Point Data Record Format 0 to 10. Partially supports other PDRF.
 %
 % Reads LAS-File data with the help of a C++ Mex-File into a lasdata style
@@ -19,31 +19,33 @@
 % Input:        lasFilePath [char array]:	Full Path to LAS-File
 % (optional)    optsString  [char array]:   Optional input option string
 %
-% optsString:   'LoadOnlyHeader' - Fill only header struct
-%				'VLR'			 - Get header and variable length records
-%								   Does not include extended VLRs
+% optsString:   'LoadOnlyHeader' - Fill header struct only
+%               'VLR'			 - Get header and variable length records
+%                                  Does not include extended VLRs
+%               'XYZInt'         - Loads header, VLR, X, Y, Z and intensities
 %               'LoadAll'        - Loads all of the point data
 %                                  (same as with only one given input)
-% 
+%
 % Output:       lasStruct [struct]:         lasdata style struct
-%			
+%
 %
 % This function uses the extension .mexw64.
 % Originally built in Matlab 2019b with Microsoft Visual C++ 2019
 %
-% Source: readLasFile.cpp LAS_IO.cpp LasReader.cpp VariableLengthRecords.cpp
-% To rebuild this function run the provided script 'make_readLasFile.m'
+% Source: readLasFile.cpp LAS_IO.cpp LasReader.cpp
+%         VariableLengthRecords.cpp  LASAlloc.cpp
+% To rebuild this function run the provided script 'build_readLasFile.m'
 %
 % Copyright (c) 2022, Patrick Kümmerle
 % Licence: see the included file
-% 
+%
 %========================================================*/
 
 
 #include "mex.h"
 #include <fstream>
 #include <cstring>
-#include "LAS_IO.cpp"
+#include "LAS_IO.hpp"
 
 
 /* The gateway function. */

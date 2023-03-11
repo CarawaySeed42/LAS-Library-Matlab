@@ -1,4 +1,4 @@
-#include "LAS_IO.cpp"
+#include "LAS_IO.hpp"
 #include <cstring>
 #include <memory>
 #include <cmath>

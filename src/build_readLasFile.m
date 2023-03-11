@@ -67,10 +67,10 @@ end
 
 % Print chosen options
 fprintf(1, 'Compiler Input: %s\n', [interleaveOpts, ' ', verboseFlag, ' ', debugFlag, ' ', combinedFlag, ' ', 'readLASfile_cpp.cpp', ' ',...
-           'LAS_IO.cpp', ' ', 'LASReader.cpp', ' ',  'VariableLengthRecords.cpp', ' ', 'LASAllocation.cpp', ' -outdir ',  outdir, ' -output ', outputname]);
+           'LASReader.cpp', ' ',  'VariableLengthRecords.cpp', ' ', 'LASAllocation.cpp', ' -outdir ',  outdir, ' -output ', outputname]);
 
 % Compile File
-mex(interleaveOpts, verboseFlag, debugFlag, combinedFlag, 'readLASfile_cpp.cpp', 'LAS_IO.cpp',...
+mex(interleaveOpts, verboseFlag, debugFlag, combinedFlag, 'readLASfile_cpp.cpp',...
     'LASReader.cpp', 'VariableLengthRecords.cpp', 'LASAllocation.cpp', '-outdir', outdir, '-output', outputname)
 
 fprintf('-------------------------------------------------------------\n');

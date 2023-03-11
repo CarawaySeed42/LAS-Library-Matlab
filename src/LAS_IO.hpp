@@ -1,4 +1,3 @@
-#pragma once
 #ifndef LAS_IO_H
 #define LAS_IO_H
 
