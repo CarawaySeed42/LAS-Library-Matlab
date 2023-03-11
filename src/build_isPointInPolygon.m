@@ -63,15 +63,15 @@ end
 
 CFLAGS = '';
 if parallel_computing
-    if ismac
-        % Flag to run on Mac platform
-        fprintf(1,'Mac platform not supported for parallel processing!');
+    if ispc
+        % Flag to run on Windows platform
+        CFLAGS = 'COMPFLAGS="$COMPFLAGS /openmp"';
     elseif isunix
         % Flag to run on Linux platform
         CFLAGS='''$CFLAGS -fopenmp'' -LDFLAGS=''$LDFLAGS -fopenmp''';
-    elseif ispc
-        % Flag to run on Windows platform
-        CFLAGS = 'COMPFLAGS="$COMPFLAGS /openmp"';
+    elseif ismac
+        % Flag to run on Mac platform
+        fprintf(1,'Mac platform not supported for parallel processing!');
     else
         fprintf(1,'Platform not supported');
     end

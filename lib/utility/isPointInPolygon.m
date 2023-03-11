@@ -18,8 +18,8 @@ function isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads,
 %               pointsX [nx1 double]:	X-Coordinates of query points
 %               pointsY [nx1 double]:	Y-Coordinates of query points
 %               numThreads [double] :   Max. number of threads used if
-%                                       above threshold
-%               algorithm [int]     :   0 == Winding Number
+%                                       above threshold (default is 1)
+%               algorithm [int]     :   0 == Winding Number (default)
 %                                       1 == WN but borders are inside
 %                                       2 == Ray Casting
 % 
@@ -42,5 +42,12 @@ function isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads,
 % where multi-threading is faster than single threaded. But it is chosen in
 % a way, that if both are below the threshold then single-threaded will
 % basically always be faster. 
+if nargin < 5
+    numThreads = 1;
+end
+if nargin < 6
+    algorithm = 0;
+end
+
 isInside = isPointInPolygon_cpp(polyX, polyY, pointsX, pointsY, numThreads, algorithm);
 end
