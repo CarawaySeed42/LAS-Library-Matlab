@@ -1,8 +1,12 @@
-function isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads)
-% isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads)
+function isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads, algorithm)
+% isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads, algorithm)
 % 
-% Finds 2D points inside and outside of a 2D polygon using the 
-% Raycasting Algorithm.
+% Finds 2D points inside and outside of a 2D polygon 
+%
+% Different algorithms can be chosen. Standard is the winding number
+% algorithm. Points on the border do not count as inside but there is an
+% option to treat points on the border as inside (see Input)
+%
 % Supports multithreading that kicks in if more than 1e4 points or more
 % than 150 polygon vertices are to be processed. The function has to be
 % compiled with 'parallel_computing = true'. The number of threads can
@@ -15,6 +19,9 @@ function isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads)
 %               pointsY [nx1 double]:	Y-Coordinates of query points
 %               numThreads [double] :   Max. number of threads used if
 %                                       above threshold
+%               algorithm [int]     :   0 == Winding Number
+%                                       1 == WN but borders are inside
+%                                       2 == Ray Casting
 % 
 % Returns:      isInside [nx1 bool] :	true if point is inside,
 %                                       false if point is outside poylgon
@@ -35,5 +42,5 @@ function isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads)
 % where multi-threading is faster than single threaded. But it is chosen in
 % a way, that if both are below the threshold then single-threaded will
 % basically always be faster. 
-isInside = isPointInPolygon_cpp(polyX, polyY, pointsX, pointsY, numThreads);
+isInside = isPointInPolygon_cpp(polyX, polyY, pointsX, pointsY, numThreads, algorithm);
 end

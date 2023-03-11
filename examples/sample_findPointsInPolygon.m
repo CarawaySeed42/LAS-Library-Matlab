@@ -17,6 +17,7 @@ fprintf('-------------------------------------------------------------\n');
 % Initializations
 numberOfThreads = 4;
 numberOfVertices = 3960;
+searchAlgorithm = 0;
 
 %% Add required paths
 addpath('../lib')
@@ -41,7 +42,7 @@ polyY = mean(pcloud.y) + (cosd((1:numberOfVertices)/vertexNumberToCircleScale) *
 %% Find points in polygon
 fprintf('     Find points in circle approximating polygon...\n');
 tic;
-isInside = isPointInPolygon(polyX, polyY, pcloud.x, pcloud.y, 1);
+isInside = isPointInPolygon(polyX, polyY, pcloud.x, pcloud.y, 1, searchAlgorithm);
 t1 = toc;
 isInsideAccumulation = isInside;
 
@@ -51,7 +52,7 @@ fprintf('     Number of points in polygon: %d of %d points\n', sum(isInside), le
 %% Multi-threaded point search
 fprintf('     Find points in polygon with multithreading and %d threads...\n\n', numberOfThreads);
 t2 = toc;
-isInside = isPointInPolygon(polyX, polyY, pcloud.x, pcloud.y, numberOfThreads);
+isInside = isPointInPolygon(polyX, polyY, pcloud.x, pcloud.y, numberOfThreads, searchAlgorithm);
 t3 = toc-t2;
 isInsideAccumulation = isInsideAccumulation | isInside;
 
