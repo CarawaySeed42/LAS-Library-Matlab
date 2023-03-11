@@ -15,6 +15,7 @@ if ~isdeployed
     addpath(fullfile(path,'/mex'));
     addpath(fullfile(path,'/lasdata_port'));
     addpath(fullfile(path,'/utility'));
+    addpath(fullfile(path,'/vlr'));
 end
 end
 

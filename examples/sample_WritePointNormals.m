@@ -112,6 +112,11 @@ extrabytes.SetDescription(extrabytes.ExtrabyteNames{3}, 'Z vector component');
 fprintf('     Encoding Extra Bytes...\n');
 pcloud_modified = encode_extrabytes(pcloud, extrabytes, 'Point Cloud Normals');
 
+%% Add a text area description
+textAreaDescription = ['This is a LAS file with normal vectors stored ',...
+                       'inside extrabytes'];
+pcloud_modified = add_Text_Area_Description(pcloud_modified, textAreaDescription);
+
 %% Write new cloud to modified_samples folder
 targetDir = strcat(path, '\', 'modified_samples');
 if ~exist(targetDir, 'dir')
