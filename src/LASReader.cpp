@@ -3,7 +3,7 @@
 #include <memory>
 
 
-void LasDataReader::ReadLasHeader(std::ifstream& lasBin)
+void LASdataReader::ReadLASheader(std::ifstream& lasBin)
 {
 	// Reads Las-File under the assumption that Header is 375 Bytes Long, which is the maximal size up to LAS 1.4
 	const int headerReadBytes = 375;
@@ -74,7 +74,7 @@ void LasDataReader::ReadLasHeader(std::ifstream& lasBin)
 	}
 
 	// Set internal record format id
-	SetInternalRecordFormatID();
+	setInternalRecordFormatID();
 
 	// Set Flags for colors, time, wave packets, NIR, VLR and extrabytes
 	m_containsTime = false;
@@ -121,7 +121,7 @@ void LasDataReader::ReadLasHeader(std::ifstream& lasBin)
 }
 
 
-void LasDataReader::ReadPointData(std::ifstream& lasBin)
+void LASdataReader::ReadPointData(std::ifstream& lasBin)
 {
 	const int chunksize = 4096;																		// Blocksize of points for reading -> How many Points will be read at once. Bigger buffer yields diminishing returns
 	int pointsToProcessInBuffer = chunksize;														// Used and manipulated in reading for-loop
@@ -462,12 +462,12 @@ void LasDataReader::ReadPointData(std::ifstream& lasBin)
 }
 
 
-bool LasDataReader::CheckHeaderConsistency(std::ifstream& lasBin)
+bool LASdataReader::CheckHeaderConsistency(std::ifstream& lasBin)
 {
 	bool isHeaderGood = true;
 
 	if (m_internalPointDataRecordID == -1) {
-		SetInternalRecordFormatID();
+		setInternalRecordFormatID();
 	}
 
 	char lasf[] = "LASF";
@@ -540,7 +540,7 @@ bool LasDataReader::CheckHeaderConsistency(std::ifstream& lasBin)
 	return isHeaderGood;
 }
 
-void LasDataReader::SetReadXYZIntOnly(bool m_XYZIntOnly_flag) {
+void LASdataReader::SetReadXYZIntOnly(bool m_XYZIntOnly_flag) {
 	m_XYZIntOnly = m_XYZIntOnly_flag;
 }
 

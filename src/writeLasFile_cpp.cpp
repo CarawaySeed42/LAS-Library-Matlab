@@ -78,7 +78,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 	if (lasBin.is_open()) {
 		try {
 			// Initialize instance of lasDataWriter class
-			LasDataWriter lasWriter;
+			LASdataWriter lasWriter;
 
 			lasWriter.GetHeader(prhs[0]);
 			lasWriter.WriteLASheader(lasBin);

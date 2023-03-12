@@ -32,7 +32,7 @@
 
 #endif
 
-void LasDataReader::InitializeOutputStruct(mxArray*& plhs, std::ifstream& lasBin)
+void LASdataReader::InitializeOutputStructure(mxArray*& plhs, std::ifstream& lasBin)
 {
 	try
 	{
@@ -70,7 +70,7 @@ void LasDataReader::InitializeOutputStruct(mxArray*& plhs, std::ifstream& lasBin
 	}
 }
 
-void LasDataReader::FillStructHeader(std::ifstream& lasBin)
+void LASdataReader::PopulateStructureHeader(std::ifstream& lasBin)
 {
 	try {
 		mxArray* pMXheader = m_mxStructPointer.pMXheader;	// pointer to matlab header struct
@@ -186,7 +186,7 @@ void LasDataReader::FillStructHeader(std::ifstream& lasBin)
 	}
 }
 
-void LasDataReader::AllocateOutputStruct(mxArray*& plhs, std::ifstream& lasBin) {
+void LASdataReader::AllocateOutputStructure(mxArray*& plhs, std::ifstream& lasBin) {
 
 	try {
 		// Pointer to the mxArray which is to be allocated right now, pointer shifts from field to field

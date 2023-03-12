@@ -49,7 +49,7 @@ constexpr auto size_uint64		= sizeof(uint64_t);
 constexpr auto size_3_int32		= 3 * sizeof(int32_t);
 constexpr auto size_3_uint16	= 3 * sizeof(uint16_t);
 
-bool LasDataWriter::WriteLASheader(std::ofstream& lasBin)
+void LASdataWriter::WriteLASheader(std::ofstream& lasBin)
 {
 	if (!lasBin.is_open()) { throw std::ofstream::failure("File is not open or not writable!"); }
 
@@ -131,13 +131,11 @@ bool LasDataWriter::WriteLASheader(std::ofstream& lasBin)
 		lasBin.seekp(currentStreampos, lasBin.beg);
 	}
 
-	SetInternalRecordFormatID();
-
-	return true;
+	setInternalRecordFormatID();
 }
 
 
-bool LasDataWriter::WriteLASdata(std::ofstream& lasBin)
+void LASdataWriter::WriteLASdata(std::ofstream& lasBin)
 {
 	// Check if datatype sizes are correct during compilation
 	static_assert(sizeof(float) == 4,			"Float should have a size of 8! But it is not on this machine!");
@@ -149,10 +147,10 @@ bool LasDataWriter::WriteLASdata(std::ofstream& lasBin)
 	size_t bufOffPointStart = 0;		// Offset to current position in write Buffer
 
 	// Check if necessary Pointers are valid (Creates Matlab Error if not)
-	IsDataValid();
+	isDataValid();
 
 	// Get Interal record format and get all the byte offsets to LAS Fields
-	SetInternalRecordFormatID();
+	setInternalRecordFormatID();
 
 	const int record_length         = m_header.PointDataRecordLength;
 	const int extradata_Byte		= m_record_lengths[m_internalPointDataRecordID];
@@ -183,7 +181,7 @@ bool LasDataWriter::WriteLASdata(std::ofstream& lasBin)
 	const double zOff	= m_header.zOffset;
 
 	// Set stream position before write as offset to point data
-	SetStreamPosAsDataOffset(lasBin);
+	setStreamPosAsDataOffset(lasBin);
 
 	// Seek start of point data in file
 	if (!lasBin.is_open()) { throw std::ofstream::failure("File is not open or not writable!"); }
@@ -294,11 +292,9 @@ bool LasDataWriter::WriteLASdata(std::ofstream& lasBin)
 		// Finally write buffer to file
 		lasBin.write(pBuffer, static_cast<std::streamsize>(writeBufferPointSize) * m_header.PointDataRecordLength);
 	}
-
-	return true;
 }
 
-bool LasDataWriter::GetHeader(const mxArray* prhs)
+void LASdataWriter::GetHeader(const mxArray* prhs)
 {
 	mxDouble* pMXDouble;
 	mxChar* pMXChar;
@@ -376,35 +372,14 @@ bool LasDataWriter::GetHeader(const mxArray* prhs)
 
 	// Copy system identifier and generating software char by char until null character or end of array is reached
 	pMXChar = GetChars(mxGetField(pMxHeader, 0, "system_identifier"));
+	copyMXCharToArray(&m_header.systemIdentifier[0], pMXChar, 32);
 
-	if (nullptr != pMXChar) {
-		for (int i = 0; i < 32; ++i) {
-			char copyChar = static_cast<char>(pMXChar[i]);
-			if (copyChar == 0) {
-				break;
-			}
-
-			m_header.systemIdentifier[i] = copyChar;
-		}
-	}
-	
 	pMXChar = GetChars(mxGetField(pMxHeader, 0, "generating_software"));
+	copyMXCharToArray(&m_header.generatingSoftware[0], pMXChar, 32);
 
-	if (nullptr != pMXChar) {
-		for (int i = 0; i < 32; ++i) {
-			char copyChar = static_cast<char>(pMXChar[i]);
-			if (copyChar == 0) {
-				break;
-			}
-
-			m_header.generatingSoftware[i] = copyChar;
-		}
-	}
-
-	return true;
 }
 
-bool LasDataWriter::GetData(const mxArray* prhs) {
+void LASdataWriter::GetData(const mxArray* prhs) {
 
 	setContentFlags();
 
@@ -465,11 +440,9 @@ bool LasDataWriter::GetData(const mxArray* prhs) {
 	{
 		m_mxStructPointer.pExtraBytes = GetUint8(mxGetField(prhs, 0, "extradata"));
 	}
-
-	return true;
 }
 
-void LasDataWriter::IsDataValid()
+void LASdataWriter::isDataValid()
 {
 	if (nullptr == m_mxStructPointer.pX) {
 		mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to X invalid!");
@@ -568,7 +541,7 @@ void LasDataWriter::IsDataValid()
 	}
 }
 
-void LasDataWriter::SetStreamPosAsDataOffset(std::ofstream& lasBin)
+void LASdataWriter::setStreamPosAsDataOffset(std::ofstream& lasBin)
 {
 	std::streampos currentStreampos = lasBin.tellp();
 
@@ -581,4 +554,3 @@ void LasDataWriter::SetStreamPosAsDataOffset(std::ofstream& lasBin)
 		lasBin.seekp(currentStreampos, lasBin.beg);
 	}
 }
-

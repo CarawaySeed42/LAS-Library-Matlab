@@ -7,15 +7,15 @@
 #include <fstream>
 #include <vector>
 
-// Ths is the header fíle for LAS_IO and LASDataReader 
-// File Extension is cpp due to matlab compiler not recognizing .h / .hpp files
+// Ths is the header fíle for base class LAS_IO and derived classes LASDataReader and LASDataWriter
+// Info: private and protected methods start with lower case letter. Publc methods start with upper case letter.
 
 class LAS_IO 
 {
 protected:
 
 	// Las Header struct according to LAS 1.2 Specs (char arrays are null terminated)
-	struct LasHeader
+	struct LASheader
 	{
 		char			fileSignature[5]		= { '\0' };
 		unsigned short	sourceID				= 0;
@@ -55,13 +55,13 @@ protected:
 	} m_header;
 
 	// LAS Header Extension introduced with LAS 1.3
-	struct LasHeaderExt3
+	struct LASheaderExt3
 	{
 		unsigned long long startOfWaveFormData = 0;
 	} m_headerExt3;
 
 	// LAS Header Extension introduced with LAS 1.4
-	struct LasHeaderExt4
+	struct LASheaderExt4
 	{
 		unsigned long long	startOfFirstExtendedVariableLengthRecord = 0;
 		unsigned long		numberOfExtendedVariableLengthRecords	 = 0;
@@ -151,7 +151,7 @@ protected:
 	void setStreamToExtVLRHeader(std::ifstream& lasBin);
 
 	// Assign the PDRF to an index to retrieve byte offsets for all fields
-	void SetInternalRecordFormatID()
+	void setInternalRecordFormatID()
 	{
 		auto it = find(m_supported_record_formats.begin(), m_supported_record_formats.end(), m_header.PointDataRecordFormat);
 
@@ -169,7 +169,7 @@ protected:
 	void setContentFlags()
 	{
 
-		SetInternalRecordFormatID();
+		setInternalRecordFormatID();
 
 		m_containsTime = false;
 		if (m_time_Byte[m_internalPointDataRecordID] != 0) {
@@ -218,7 +218,7 @@ public:
 };
 
 
-class LasDataReader : public LAS_IO
+class LASdataReader : public LAS_IO
 {
 
 // Private members to only allow modifcation from inside class
@@ -234,87 +234,54 @@ private:
 	//Flag for reading of XYZ and intensity only, if specified by user, point data record format is not supported or point data record length is smaller than specification for pdrf
 	bool m_XYZIntOnly = false;
 
-	/// <summary>
-	/// Reads one Variable Length Record Header from file to class member m_VLRHeader. The ifstream position has to point to the beginning of a variable length record header!
-	/// </summary>
-	/// <param name="lasBin"></param>
+	// Reads one Variable Length Record Header from file to class member m_VLRHeader. The ifstream position has to point to the beginning of a variable length record header!
 	void readVLRHeader(std::ifstream& lasBin);
 
-	/// <summary>
-	/// Reads one Extended Variable Length Record Header from file to class member m_ExtVLRHeader. The ifstream position has to point to the beginning of a extended variable length record header!
-	/// </summary>
-	/// <param name="lasBin"></param>
+	// Reads one Extended Variable Length Record Header from file to class member m_ExtVLRHeader. The ifstream position has to point to the beginning of a extended variable length record header!
 	void readExtVLRHeader(std::ifstream& lasBin);
 
-	/// <summary>
-	/// Creates the Variable Length Record structure field for the matlab output struct
-	/// </summary>
-	/// <param name="plhs"></param>
-	/// <returns>mxArray*: Pointer to created struct mxArray</returns>
+	// Creates the Variable Length Record structure field for the matlab output struct
+	// Returns: 
+	//    mxArray* : Pointer to created struct mxArray
 	mxArray* createMXVLRStruct(mxArray*& plhs);
 
-	/// <summary>
-	/// Creates the Extended Variable Length Record field structure for the matlab output struct
-	/// </summary>
-	/// <param name="plhs"></param>
-	/// <returns>mxArray*: Pointer to created struct mxArray</returns>
+	// Creates the Extended Variable Length Record field structure for the matlab output struct
+	///Returns:
+	//    mxArray* : Pointer to created struct mxArray
 	mxArray* createMXExtVLRStruct(mxArray*& plhs);
 
 public:
 
+	// Set Flag if only XYZ coordinates and intensity are to be read
 	void SetReadXYZIntOnly(bool m_XYZIntOnly_flag);
 
-	/// <summary>
-	/// Read Las-File header to class member struct m_header
-	/// </summary>
-	/// <param name="lasBin"></param>
-	void ReadLasHeader(std::ifstream& lasBin);
+	// Read Las-File header to class member struct m_header
+	void ReadLASheader(std::ifstream& lasBin);
 
-	/// <summary>
-	/// Read Point Data from LAS-File stream using header information and write them to output struct
-	/// </summary>
-	/// <param name="lasBin"></param>
-	/// <returns></returns>
+	// Read Point Data from LAS-File stream using header information and write them to output struct
 	void ReadPointData(std::ifstream& lasBin);
 
-	/// <summary>
-	/// Checks header consistency. The file stream is used to determine the file size and how many bytes could be reserved for points.
-	/// If an header error is not too severe then return headerGood = false. This will indicate that the header contents should be saved to output struct for the error to be analysed by the user. 
-	/// </summary>
-	/// <param name="lasBin"></param>
-	/// <returns>isHeaderGood:   True if header and file are consistent, false otherwise</returns>
+	// Checks header consistency. 
+	// The file stream is used to determine the file size and how many bytes could be reserved for points.
+	// If an header error is not too severe then return headerGood = false. 
+	// This will indicate that the header contents should be saved to output struct for the error to be analysed by the caller. 
+	// Returns:
+	//    isHeaderGood : True if header and file are consistent, false otherwise
 	bool CheckHeaderConsistency(std::ifstream& lasBin);
 
-	/// <summary>
-	/// Sets up the output matlab struct and creates all its necessary fields
-	/// </summary>
-	/// <param name="plhs"></param>
-	/// <param name="lasBin"></param>
-	void InitializeOutputStruct(mxArray*& plhs, std::ifstream& lasBin);
+	// Sets up the matlab output structure and initializes all its necessary fields
+	void InitializeOutputStructure(mxArray*& plhs, std::ifstream& lasBin);
 
-	/// <summary>
-	/// Allocate point data fields of output struct according to header information and save data pointer to m_mxStructPointer
-	/// </summary>
-	/// <param name="plhs"></param>
-	/// <param name="lasBin"></param>
-	void AllocateOutputStruct(mxArray*& plhs, std::ifstream& lasBin);
+	// Allocate point data fields of output struct according to header information and save data pointer to m_mxStructPointer
+	void AllocateOutputStructure(mxArray*& plhs, std::ifstream& lasBin);
 
-	/// <summary>
-	/// Allocates matlab header struct and sets values from class member m_header to it
-	/// </summary>
-	/// <param name="lasBin"></param>
-	void FillStructHeader(std::ifstream& lasBin);
+	// Allocates matlab header struct and sets values from class member m_header to it
+	void PopulateStructureHeader(std::ifstream& lasBin);
 
-	/// <summary>
-	/// Reads every Variable Length Record from file and writes it to matlab output struct
-	/// </summary>
-	/// <param name="lasBin"></param>
+	// Reads every Variable Length Record from file and writes it to matlab output struct
 	void ReadVLR(mxArray*& plhs, std::ifstream& lasBin);
 
-	/// <summary>
-	/// Reads every Extended Variable Length Record from file and writes it to matlab output struct
-	/// </summary>
-	/// <param name="lasBin"></param>
+	// Reads every Extended Variable Length Record from file and writes it to matlab output struct
 	void ReadExtVLR(mxArray*& plhs, std::ifstream& lasBin);
 	
 private:
@@ -462,7 +429,7 @@ private:
 
 };
 
-class LasDataWriter : public LAS_IO
+class LASdataWriter : public LAS_IO
 {
 private:
 	// How many points to read? Header info is ambigous due to legacy and LAS 1.4 field
@@ -472,26 +439,55 @@ private:
 	const size_t m_record_lengths_size = m_record_lengths.size();
 
 	// Are the Pointers to the neccessary Matlab data valid (Throws Matlab Error if not)
-	void IsDataValid();
+	void isDataValid();
 
-	void SetStreamPosAsDataOffset(std::ofstream& lasBin);
+	// Writes current stream position as offset to point data into LAS file
+	void setStreamPosAsDataOffset(std::ofstream& lasBin);
 
-	void GetVLRHeader(mxArray* pVLRfield, size_t VLRindex);
+	// Copy one VLR header entry from matlab structure at VLRindex to VLRHeader structure
+	void getVLRHeader(mxArray* pVLRfield, size_t VLRindex);
 
-	void GetExtVLRHeader(mxArray* pVLRfield, size_t VLRindex);
+	// Copy one Extended VLR header entry from matlab structure at VLRindex to ExtVLRHeader structure
+	void getExtVLRHeader(mxArray* pVLRfield, size_t VLRindex);
+
+	// Copies count characters from mxChar array to char array. Stops if a null character is encountered
+	inline void copyMXCharToArray(char* pCharDestination, const mxChar* const pMXCharSource, size_t count)
+	{
+		char copyChar;
+
+		if (nullptr == pMXCharSource || nullptr == pCharDestination) 
+		{
+			return;
+		}
+
+		for (size_t i = 0; i < count; ++i) 
+		{
+			copyChar = static_cast<char>(pMXCharSource[i]);
+			if (copyChar == 0) {
+				break;
+			}
+			pCharDestination[i] = copyChar;
+		}
+	}
 
 public:
-	bool GetHeader(const mxArray* lasStructure);
+	// Copy LAS header content from matlab structure to m_header and its extended forms if applicable
+	void GetHeader(const mxArray* lasStructure);
 
-	bool GetData(const mxArray* lasStructure);
+	// Point the pointers in m_mxStructPointer to the respective data fields of the matlab LAS structure
+	void GetData(const mxArray* lasStructure);
 
-	bool WriteLASheader(std::ofstream& lasBin);
+	// Write contents of m_header and extended header to file/stream
+	void WriteLASheader(std::ofstream& lasBin);
 
-	bool WriteLASdata(std::ofstream& lasBin);
+	// Write point data, that m_mxStructPointer points to, to file/stream
+	void WriteLASdata(std::ofstream& lasBin);
 
-	bool WriteVLR(std::ofstream& lasBin, const mxArray* lasStructure);
+	// Write VLR data in m_VLRHeader to file/stream
+	void WriteVLR(std::ofstream& lasBin, const mxArray* lasStructure);
 
-	bool WriteExtVLR(std::ofstream& lasBin, const mxArray* lasStructure);
+	// Write extended VLR data in m_ExtVLRHeader to file/stream
+	void WriteExtVLR(std::ofstream& lasBin, const mxArray* lasStructure);
 
 };
 

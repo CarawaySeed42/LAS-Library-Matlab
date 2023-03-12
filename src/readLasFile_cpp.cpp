@@ -110,17 +110,17 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 	if (lasBin.is_open()) {
 		try {
 			// Initialize instance of lasDataReader class
-			LasDataReader lasReader;
+			LASdataReader lasReader;
 
 			// Read Header and then check it
-			lasReader.ReadLasHeader(lasBin);
+			lasReader.ReadLASheader(lasBin);
 			bool headerGood = lasReader.CheckHeaderConsistency(lasBin);
 
 			// Create Output Structure
-			lasReader.InitializeOutputStruct(plhs[0], lasBin);
+			lasReader.InitializeOutputStructure(plhs[0], lasBin);
 
 			// Fill Header of output Structure
-			lasReader.FillStructHeader(lasBin);
+			lasReader.PopulateStructureHeader(lasBin);
 
 			// If load only header chosen or header is bad then return
 			if (loadOnlyHeader || !headerGood) {
@@ -146,7 +146,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 			}
 
 			// Allocate Rest of the Point Data if load only header is not chosen
-			lasReader.AllocateOutputStruct(plhs[0], lasBin);
+			lasReader.AllocateOutputStructure(plhs[0], lasBin);
 
 			// Read Las Data
 			lasReader.ReadPointData(lasBin);
