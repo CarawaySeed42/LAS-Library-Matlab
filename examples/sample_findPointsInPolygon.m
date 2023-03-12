@@ -42,7 +42,7 @@ polyY = mean(pcloud.y) + (cosd((1:numberOfVertices)/vertexNumberToCircleScale) *
 %% Find points in polygon
 fprintf('     Find points in circle approximating polygon...\n');
 isInside = isPointInPolygon(polyX, polyY, pcloud.x, pcloud.y, 1, searchAlgorithm);
-isInsideAccumulation = isInside;
+isInsideIdentityTest = isInside;
 
 % Test execution time
 f = @() isPointInPolygon(polyX, polyY, pcloud.x, pcloud.y, 1, searchAlgorithm);
@@ -54,7 +54,9 @@ fprintf('     Number of points in polygon: %d of %d points\n', sum(isInside), le
 %% Multi-threaded point search
 fprintf('     Find points in polygon with multithreading and %d threads...\n\n', numberOfThreads);
 isInside = isPointInPolygon(polyX, polyY, pcloud.x, pcloud.y, numberOfThreads, searchAlgorithm);
-isInsideAccumulation = isInsideAccumulation | isInside;
+
+% Test if results are the same
+resultsAreSame = all(isInsideIdentityTest == isInside);
 
 % Test execution time
 f = @() isPointInPolygon(polyX, polyY, pcloud.x, pcloud.y, numberOfThreads, searchAlgorithm);
@@ -81,13 +83,13 @@ t3 = toc;
 % inpolygon 's time is measured wth tic toc because timeit takes too long
 % This is enough because it is only supposed to be a reference
 
-% Compare previous results to last result
-isInsideAccumulation = isInsideAccumulation == isInside;
+% Compare previous results to first result
+resultsAreSame = resultsAreSame & all(isInsideIdentityTest == isInside);
 
 fprintf('     Execution Time (Built-In Matlab Function) \t: %6.1fms\n', t3*1000);
 fprintf('-------------------------------------------------------------\n');
 
-if all(isInsideAccumulation)
+if resultsAreSame
     fprintf('     All methods returned the same result\n');
 else
     fprintf('     Methods returned different results! Output is not identical!\n');
