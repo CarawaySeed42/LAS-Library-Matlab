@@ -41,23 +41,27 @@ polyY = mean(pcloud.y) + (cosd((1:numberOfVertices)/vertexNumberToCircleScale) *
 
 %% Find points in polygon
 fprintf('     Find points in circle approximating polygon...\n');
-tic;
 isInside = isPointInPolygon(polyX, polyY, pcloud.x, pcloud.y, 1, searchAlgorithm);
-t1 = toc;
 isInsideAccumulation = isInside;
+
+% Test execution time
+f = @() isPointInPolygon(polyX, polyY, pcloud.x, pcloud.y, 1, searchAlgorithm);
+t1 = timeit(f,1);
 
 fprintf('     Number of vertices of polygon: %d points\n', length(polyX));
 fprintf('     Number of points in polygon: %d of %d points\n', sum(isInside), length(isInside));
 
 %% Multi-threaded point search
 fprintf('     Find points in polygon with multithreading and %d threads...\n\n', numberOfThreads);
-t2 = toc;
 isInside = isPointInPolygon(polyX, polyY, pcloud.x, pcloud.y, numberOfThreads, searchAlgorithm);
-t3 = toc-t2;
 isInsideAccumulation = isInsideAccumulation | isInside;
 
+% Test execution time
+f = @() isPointInPolygon(polyX, polyY, pcloud.x, pcloud.y, numberOfThreads, searchAlgorithm);
+t2 = timeit(f,1);
+
 fprintf('     Execution Time (Single Threaded)\t\t\t: %6.1fms\n', t1*1000);
-fprintf('     Execution Time (Multi Threaded) \t\t\t: %6.1fms\n', t3*1000);
+fprintf('     Execution Time (Multi Threaded) \t\t\t: %6.1fms\n', t2*1000);
 
 %% Show Results
 figure; 
@@ -71,14 +75,16 @@ xlabel('Y-Coordinate [m]')
 legend('Search Polygon', 'Points outside Polygon', 'Points inside Polygon')
 
 %% Comparison to built-in matlab function
-t4 = toc;
+tic;
 isInside = inpolygon(pcloud.x, pcloud.y, polyX, polyY);
-t5 = toc-t4;
+t3 = toc; 
+% inpolygon 's time is measured wth tic toc because timeit takes too long
+% This is enough because it is only supposed to be a reference
 
 % Compare previous results to last result
 isInsideAccumulation = isInsideAccumulation == isInside;
 
-fprintf('     Execution Time (Built-In Matlab Function) \t: %6.1fms\n', t5*1000);
+fprintf('     Execution Time (Built-In Matlab Function) \t: %6.1fms\n', t3*1000);
 fprintf('-------------------------------------------------------------\n');
 
 if all(isInsideAccumulation)

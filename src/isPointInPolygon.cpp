@@ -14,13 +14,12 @@
 
 inline bool raycast(const double* __restrict  polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount);
 inline bool windingNumber(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount);
-inline bool windingNumberIncludeBorder(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount);
-inline void windingNumberIncludeBordersss(const double *polyX, const double *polyY, const double *pointX, const double *pointY, const size_t polyCount, const size_t pointCount, const size_t threadCount, mxLogical*& result);
+inline bool windingNumberIncludeEdges(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount);
 
 template<typename T>
 inline T isLeft(const T polyX_1, const T polyY_1, const T polyX_2, const T polyY_2, const T queryX, const T queryY);
 
-enum searchAlgorithm { WindingNumber, WindingNumberWithBorders, Raycast };
+enum searchAlgorithm { WindingNumber, WindingNumberIncludeEdges, Raycast };
 
 void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) 
 {
@@ -48,7 +47,9 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 	// Set number if threads according to argument or available threads, depending on which is smaller
 	if (nrhs > 4) {
 		const int machine_num_threads	= std::thread::hardware_concurrency();
-		numberOfThreads					= (numberOfThreads < machine_num_threads) ? static_cast<int>(mxGetScalar(prhs[4])) : machine_num_threads;
+		const int inputThreadNumber		= static_cast<int>(mxGetScalar(prhs[4]));
+
+		numberOfThreads					= inputThreadNumber   < machine_num_threads ? inputThreadNumber : machine_num_threads;
 		numberOfThreads					= numberOfThreads < 1 ? machine_num_threads : numberOfThreads;
 	}
 
@@ -90,14 +91,14 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 	mxLogical* result = mxGetLogicals(plhs[0]);
 
 	/*Run Point in Poly algorithm*/ 
-	const int threadChunksize = static_cast<int>((size_pointsX / (numberOfThreads * 50)) + 1);
-	omp_set_num_threads(static_cast<int>(numberOfThreads));
+	const int threadChunksize = numberOfThreads > 1 ? static_cast<int>((size_pointsX / (numberOfThreads * 50)) + 1) : static_cast<int>(size_pointsX);
+	omp_set_num_threads(numberOfThreads);
 
-	if (algorithmInput == WindingNumberWithBorders)
+	if (algorithmInput == WindingNumberIncludeEdges)
 	{
 #pragma omp parallel for schedule(dynamic, threadChunksize) default(shared) if (size_pointsX > 10000 || size_polyX > 150)
 		for (int i = 0; i < size_pointsX; ++i) {
-			result[i] = windingNumberIncludeBorder(polyX, polyY, pointsX[i], pointsY[i], size_polyX);
+			result[i] = windingNumberIncludeEdges(polyX, polyY, pointsX[i], pointsY[i], size_polyX);
 		}
 	}
 	else if (algorithmInput == Raycast)
@@ -140,7 +141,7 @@ inline bool raycast(const double* __restrict polyX, const double* __restrict pol
 //	Returns: true if point inside polygon, false if otherwise
 inline bool windingNumber(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount)
 {
-	int winding_num = 0;  // the  winding number counter
+	int winding_num = 0;  // Winding number counter
 
 	for (int i = 0, j = polyCount - 1; i < polyCount; j = i++)
 	{
@@ -170,25 +171,26 @@ inline bool windingNumber(const double* __restrict polyX, const double* __restri
 // Tests if the winding number for a query point and a polygon is unequal to zero or if point is on border
 // If so then the point is fully inside the polygon
 //	Returns: true if point inside polygon or on border, false if otherwise
-inline bool windingNumberIncludeBorder(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount)
+inline bool windingNumberIncludeEdges(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount)
 {
-	int winding_num = 0;  // the  winding number counter
+	int winding_num = 0;  // Winding number counter
 
 	for (int i = 0, j = polyCount - 1; i < polyCount; j = i++)
 	{
+		// If query point is on vertex then count it as inside
 		if (polyX[i] == pointX && polyY[i] == pointY)
 		{
 			winding_num = 1;
 			break;
 		}
 
-		// Early continue if ray does not intersect the segment
+		// Early continue to avoid costly calculation of point direction if ray does not intersect the segment
 		if (!((polyY[i] > pointY) != (polyY[j] > pointY)))
 			continue;
 
 		const double& sideOfLine = isLeft(polyX[j], polyY[j], polyX[i], polyY[i], pointX, pointY);
 
-		// Check if the point lies on the polygon.
+		// Check if the point lies on the polygon edge. If so then count as inside
 		if (sideOfLine == 0)
 		{
 			winding_num = 1;

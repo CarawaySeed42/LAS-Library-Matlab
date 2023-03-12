@@ -1,7 +1,8 @@
 function isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads, algorithm)
 % isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads, algorithm)
 % 
-% Finds 2D points inside and outside of a 2D polygon 
+% Finds 2D points inside and outside of a 2D polygon. 
+% Maximum point count for query points and polygon is 2^31-1.
 %
 % Different algorithms can be chosen. Standard is the winding number
 % algorithm. Points on the border do not count as inside but there is an
@@ -12,6 +13,7 @@ function isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads,
 % compiled with 'parallel_computing = true'. The number of threads can
 % be specified, but they will automatically be limited to the number of
 % available concurrent threads of the CPU, if the number is too big.
+% Number of threads will be set to max available threads if input is zero
 %
 % Input:        polyX [nx1 double]  :	X-Coordinates of polygon vertices
 %               polyY [nx1 double]  :	Y-Coordinates of polygon vertices
@@ -20,7 +22,7 @@ function isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads,
 %               numThreads [double] :   Max. number of threads used if
 %                                       above threshold (default is 1)
 %               algorithm [int]     :   0 == Winding Number (default)
-%                                       1 == WN but borders are inside
+%                                       1 == WN but edges count inside
 %                                       2 == Ray Casting
 % 
 % Returns:      isInside [nx1 bool] :	true if point is inside,
