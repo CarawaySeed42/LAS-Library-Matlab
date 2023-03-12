@@ -45,7 +45,7 @@ end
 
 Text_Area_VLR = struct('reserved', uint16(0), 'user_id', 'LASF_Spec',...
     'record_id', record_id_value, 'record_length', record_length, ...
-    'description', '','data', uint8(description), 'data_as_text', description);
+    'description', 'Text Area Description','data', uint8(description), 'data_as_text', description);
 
 % If a record exists as VLR and a ExtVLR then delete one
 % If a field gets empty in the process then properly clean them up
