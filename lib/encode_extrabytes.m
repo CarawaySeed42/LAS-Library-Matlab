@@ -145,7 +145,7 @@ for i = 1:extradata_Count
     descriptor_data(89:96)      = typecast(cast(curProp.descriptor.max,upcastTmp), 'uint8');    % 8 Bytes any type
     descriptor_data(113:120)    = typecast(cast(curProp.descriptor.scale, 'double'), 'uint8');  % 8 Bytes
     descriptor_data(137:144)    = typecast(cast(curProp.descriptor.offset, 'double'), 'uint8'); % 8 Bytes
-    descriptor_data(161:192)    = curProp.descriptor.description;                               % 8 Bytes
+    descriptor_data(161:192)    = curProp.descriptor.description;                               % 32 Bytes
     
     % Dynamically add descriptor (Unneccessary memory usage but data is
     % small enough)
