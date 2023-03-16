@@ -1,9 +1,12 @@
-function extrabytes = decode_extrabytes(lasStruct)
+function extrabytes = decode_extrabytes(lasStruct, showMismatchWarning)
 %extrabytesStruct = decode_extrabytes(lasStruct)
 %   Decode variable length record (VLR) and extra bytes (extradata) 
 %   following point data of LAS struct to Extrabytes object.
 %   Extra Byte descriptors with the same name will be changed for class
-%   properties. Undocumented extra bytes will be ignored
+%   properties. Undocumented extra bytes will be ignored. If the VLR
+%   specifies more Extrabytes than the extrabyte field provides then only
+%   the descriptor will be returned and a warning message will be
+%   displayed unless deactivated. 
 %
 %   Decoding und structuring is done according to specification:
 %   LAS Specification 1.4 R15
@@ -11,6 +14,11 @@ function extrabytes = decode_extrabytes(lasStruct)
 % Input:
 %   lasStruct (struct)          : Structure containing las data with
 %                                 variable length records and extradata
+%   showMismatchWarning (bool)  : Optional flag if warnings should be
+%                                 displayed if there is a mismatch between
+%                                 the number of existing extrabytes and the
+%                                 number specified in the VLR 
+%                                 (default: true)
 % Returns:
 %   extrabytes (Extrabytes)     : Extrabytes object containing decoded data
 %
@@ -77,14 +85,12 @@ datatypeIndices = Extrabytes.GetDataTypeIndices();
 
 %% Input Check and Initializations
 
-if ~isstruct(lasStruct)
-    error('Argument has to be a LAS Structure')
+if nargin <2
+    showMismatchWarning = true;
 end
 
-las_extrabyte_count = size(lasStruct.extradata, 1);
-
-if las_extrabyte_count == 0
-    error('LAS Structure has no extradata field!')
+if ~isstruct(lasStruct)
+    error('Argument has to be a LAS Structure')
 end
 
 if isempty(lasStruct.variablerecords)
@@ -194,15 +200,30 @@ for k = 1:vlr_extrabyte_count
     end
 end
 
-if vlr_documented_bytes_count > las_extrabyte_count
-    error('Extra bytes mismatch! Variable Length Records specify more extrabytes than point data has!');
+%% Check if there is a mismatch between extrabytes and VLR
+las_extrabyte_count = size(lasStruct.extradata, 1);
+
+if las_extrabyte_count == 0
+    if showMismatchWarning
+        warning(sprintf(['Extradata field of LAS Structure is empty!\n', ...
+            '         Stop decoding of extrabytes and return the decoded descriptor only!']));
+    end
+    return;
 end
 
-if vlr_documented_bytes_count < las_extrabyte_count
+if vlr_documented_bytes_count > las_extrabyte_count
+    if showMismatchWarning
+        warning(sprintf(['Extra bytes mismatch! Variable Length Records specify more extrabytes than point data has!\n', ...
+            '         Stop decoding of extrabytes and return the decoded descriptor only!']));
+    end
+    return;
+end
+
+if (vlr_documented_bytes_count < las_extrabyte_count) && showMismatchWarning
     warning('There are %d undocumented and undescribed or unsupported extra bytes! Those will be ignored!', las_extrabyte_count-vlr_documented_bytes_count);
 end
 
-% Now finally decode the extrabytes at the end of every single data point
+%% Now finally decode the extrabytes at the end of every single data point
 byte_start = 1;
 for i = 1:length(extrabytes.ExtrabyteNames)
     
