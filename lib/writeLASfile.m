@@ -24,8 +24,6 @@ function las = writeLASfile(las, filename, majorversion, minorversion, pointform
 %           keepCreationDate : If true then the file creation info from
 %                              header is kept, if False then current date
 %                              is used
-%           useLegacy        : If field is present then Legacy writer from 
-%                              the lasdata class will be used
 %
 %   Returns:
 %       las [struct]        : Struct containing the written cloud data
@@ -57,10 +55,6 @@ try
     if nargin == 6
         if isfield(optional, 'keepCreationDate')
             keepCreationDate = optional.keepCreationDate;
-        end
-        if isfield(optional, 'useLegacy')
-            las = writeLasFile_lasdata(las, filename, majorversion, minorversion, pointformat);
-            return;
         end
     end
     if nargin < 2
