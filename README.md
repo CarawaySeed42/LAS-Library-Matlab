@@ -48,4 +48,3 @@ This library is released under the MIT license
 - ~~Create a fast C++ LAS-Writer~~: Finished
 - ~~Support decoding of all variable length records predefined within LAS Specification 1.4 R15~~: Unlikely, due to how dynamic some VLRs are
 - Support external waveform data
-- Support reading of more point cloud formats (For example PCD format)
