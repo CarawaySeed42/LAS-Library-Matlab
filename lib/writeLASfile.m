@@ -1,5 +1,6 @@
 function las = writeLASfile(las, filename, majorversion, minorversion, pointformat, optional)
 % las = writeLasFile(las, filename, majorversion, minorversion, pointformat)
+% las = writeLASfile(las, filename, majorversion, minorversion, pointformat, optional)
 %
 %   Supports Versions LAS 1.1 - 1.4
 %   Supports Point Data Record Format 0 to 10
@@ -9,8 +10,10 @@ function las = writeLASfile(las, filename, majorversion, minorversion, pointform
 %   by the number of elements in field las.x. If a data field is bigger
 %   than point count, an exception will be thrown. If field has less
 %   elements then the array will be padded with zeros.
-%   But e.g. the header coordinate offsets have to be provided by the user.
-%   compatibility with lasdata matlab class by Teemu Kumpumäki (2016)
+%   Header coordinate offsets and scale factor have to be provided 
+%   by the user.
+%   Retains ompatibility with lasdata matlab class by
+%   Teemu Kumpumäki (2016)
 %
 %   Input:
 %       las [struct]        : Struct containing point cloud data
