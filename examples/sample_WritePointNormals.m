@@ -11,16 +11,17 @@
 % The normals could also be written as 3*2 byte uint16 values and are 
 % stretched into that range using the scale field. 
 % This leads to a bigger compression but also accuracy loss. 
-% Note: This is actually out of spec and might only work with this library.
+% Note: This is potentially out of spec and might only work with this library.
 % The reason is, that this library assumes that the stored values are
-% floating point values, if a scale factor is involved.
-% This option can be turned on by setting "compressed_out_of_spec" to true
+% floating point values, if a scale factor is involved. But I have not
+% found confirmation in the specification.
+% This option can be turned on by setting "write_as_uint16" to true
 %
 % For simplicity: Normals will be estimated with the respective Matlab
 % function. This capability was introduced in MATLAB2015b. Older versions
-% will not be able to run this sample. Sorry
+% will not be able to run this sample.
 
-compressed_out_of_spec = false;
+write_as_uint16 = false;
 
 if verLessThan('matlab', '8.6')
     error('This script can only be run in Matlab 2015b or newer!')
@@ -64,7 +65,7 @@ extrabytes.SetData(extrabytes.ExtrabyteNames{3}, normals(:,3));
 %% Set the data type
 % We will choose the data type uint16 which takes up 2 byte per
 % value. This will lead to lossy compression
-if compressed_out_of_spec
+if write_as_uint16
     extrabytes.SetDataType(extrabytes.ExtrabyteNames, 'int16');
 else
     extrabytes.SetDataType(extrabytes.ExtrabyteNames, 'single');
@@ -84,7 +85,7 @@ end
 for i = 1:length(extrabytes.ExtrabyteNames)
     field_name = extrabytes.ExtrabyteNames{i};
     extrabytes.SetNoData(field_name, 0);
-    if ~compressed_out_of_spec
+    if ~write_as_uint16
         extrabytes.SetMin(field_name, min(extrabytes.(field_name).decoded_data));
         extrabytes.SetMax(field_name, max(extrabytes.(field_name).decoded_data));
     else
@@ -96,7 +97,7 @@ end
 % If uint16 then only set  Scale bit to true
 % Two ways to do this are shown here. Either all are set in one 
 % function call or specify each individual option separately
-if ~compressed_out_of_spec
+if ~write_as_uint16
     extrabytes.SetOptions(extrabytes.ExtrabyteNames, false, true, true, false, false);
 else
     extrabytes.SetScaleBit(extrabytes.ExtrabyteNames, true);
