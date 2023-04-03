@@ -3,7 +3,7 @@
 % point cloud normals in. But we can store inside the extrabyte payload.
 % This sample will give you an example how to do that.
 %
-% The normals will be calculated as double value and stored as 3 * 4 byte
+% The normals are present as double value and stored as 3 * 4 byte
 % single precision values. This leads to a compression by factor 2. 
 % The reduced precision could lead to accuracy loss, but for normals that
 % should not be a problem if they are normalized.
@@ -17,14 +17,13 @@
 % found confirmation in the specification.
 % This option can be turned on by setting "write_as_uint16" to true
 %
-% For simplicity: Normals will be estimated with the respective Matlab
-% function. This capability was introduced in MATLAB2015b. Older versions
-% will not be able to run this sample.
+% For simplicity: Normals have already been calculated and are laoded from
+% file mat/pcnormals.mat
 
 write_as_uint16 = false;
 
-if verLessThan('matlab', '8.6')
-    error('This script can only be run in Matlab 2015b or newer!')
+if verLessThan('matlab', '7.3')
+    error('This script will only be run in Matlab 2011b or newer!')
 end
 
 fprintf('\nRun: sample_WritePointNormals\n');
@@ -43,14 +42,8 @@ fprintf('     Reading File: %s\n', lasFilePath);
 pcloud = readLASfile(lasFilePath);
 
 %% Calculate Point Cloud Normals
-fprintf('     Create Matlab Point Cloud object...\n');
-ptCloud = pointCloud([pcloud.x, pcloud.y, pcloud.z]);
-fprintf('     Calculate Normals...\n');
-normals = pcnormals(ptCloud, 100);
-
-% Flip normals that point in the wrong direction
-wrongDir = normals(:,3) < 0;
-normals(wrongDir, :) = -normals(wrongDir, :);
+fprintf('     Load Normals...\n');
+load('mat/pcnormals.mat')
 
 %% Add extrabytes
 fprintf('     Creating Extra Bytes...\n');
@@ -58,9 +51,9 @@ extraNames = {'vX', 'vY', 'vZ'};
 extrabytes = Extrabytes(extraNames);
 
 %% Add Data
-extrabytes.SetData(extrabytes.ExtrabyteNames{1}, normals(:,1));
-extrabytes.SetData(extrabytes.ExtrabyteNames{2}, normals(:,2));
-extrabytes.SetData(extrabytes.ExtrabyteNames{3}, normals(:,3));
+extrabytes.SetData(extrabytes.ExtrabyteNames{1}, pcnormals(:,1));
+extrabytes.SetData(extrabytes.ExtrabyteNames{2}, pcnormals(:,2));
+extrabytes.SetData(extrabytes.ExtrabyteNames{3}, pcnormals(:,3));
 
 %% Set the data type
 % We will choose the data type uint16 which takes up 2 byte per
@@ -138,9 +131,9 @@ pcloud_new = readLASfile(outPath);
 extrabytes = decode_extrabytes(pcloud_new);
 
 % Output the maximum deviation of calculated normals and compressed normals
-devX = abs(double(extrabytes.vX.decoded_data) - normals(:,1));
-devY = abs(double(extrabytes.vY.decoded_data) - normals(:,2));
-devZ = abs(double(extrabytes.vZ.decoded_data) - normals(:,3));
+devX = abs(double(extrabytes.vX.decoded_data) - pcnormals(:,1));
+devY = abs(double(extrabytes.vY.decoded_data) - pcnormals(:,2));
+devZ = abs(double(extrabytes.vZ.decoded_data) - pcnormals(:,3));
 maxDeviation = max(max([devX, devY, devZ]));
 
 fprintf('\n     Checking results...!\n');
