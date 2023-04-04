@@ -201,7 +201,7 @@ void LASdataWriter::WriteLASdata(std::ofstream& lasBin)
 	char* pBuffer = uniqueBuffer.get();
 
 	// Set Buffer to Zero
-	std::fill(pBuffer, pBuffer + bufferLength, 0);
+	std::fill(pBuffer, pBuffer + bufferLength, static_cast<char>(0));
 
 	// Don't check for file still good for every chunk
 	const unsigned int fileCheckInterval = 30;
