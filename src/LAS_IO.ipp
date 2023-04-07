@@ -16,7 +16,7 @@ inline void LAS_IO::setInternalRecordFormatID()
 	}
 	else
 	{
-		m_internalPointDataRecordID = -1;
+		m_internalPointDataRecordID = 0;
 	}
 }
 
