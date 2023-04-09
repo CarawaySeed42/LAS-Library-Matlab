@@ -152,6 +152,12 @@ void LASdataWriter::WriteLASdata(std::ofstream& lasBin)
 	// Get Interal record format and get all the byte offsets to LAS Fields
 	setInternalRecordFormatID();
 
+	if (m_internalPointDataRecordID == -1) 
+	{
+		mexWarnMsgIdAndTxt("MEX:WriteLASdata:InvalidPointDataRecordFormat", "Critical Error: Point Data Record Format not supported!\n");
+		return;
+	}
+
 	const int record_length         = m_header.PointDataRecordLength;
 	const int extradata_Byte		= m_record_lengths[m_internalPointDataRecordID];
 

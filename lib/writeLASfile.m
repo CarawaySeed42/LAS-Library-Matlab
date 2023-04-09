@@ -254,7 +254,7 @@ try
     
     
 %% Now finally write the data to drive
-    writeLASfile_cpp(las, filename);
+    writeLASfile_cpp(las, char(filename));
     
 catch MException
 end
