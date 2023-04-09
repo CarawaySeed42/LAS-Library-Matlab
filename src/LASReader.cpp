@@ -76,42 +76,8 @@ void LASdataReader::ReadLASheader(std::ifstream& lasBin)
 	// Set internal record format id
 	setInternalRecordFormatID();
 
-	// Set Flags for colors, time, wave packets, NIR, VLR and extrabytes
-	m_containsTime = false;
-	if (m_header.PointDataRecordFormat == 1 || m_header.PointDataRecordFormat > 2)
-	{
-		m_containsTime = true;
-	}
-		
-	m_containsColors = false;
-	std::vector<unsigned char> PDRF_Containing_Colors = { 2, 3, 5, 7, 8, 10 };
-	if (std::any_of(std::begin(PDRF_Containing_Colors), std::end(PDRF_Containing_Colors), [&](unsigned char i) { return i == m_header.PointDataRecordFormat; }))
-	{
-		m_containsColors = true;
-	}		
-
-	m_containsWavepackets = false;
-	std::vector<unsigned char> PDRF_Containing_Wavepackets = { 4, 5, 9, 10 };
-	if (std::any_of(std::begin(PDRF_Containing_Wavepackets), std::end(PDRF_Containing_Wavepackets), [&](unsigned char i) { return i == m_header.PointDataRecordFormat; }))
-	{
-		m_containsWavepackets = true;
-	}
-		
-	m_containsNIR = false;
-	if (m_header.PointDataRecordFormat == 8 || m_header.PointDataRecordFormat == 10)
-	{
-		m_containsNIR = true;
-	}
-		
-	m_extraByteCount = 0;
-	if (m_internalPointDataRecordID != -1 && m_internalPointDataRecordID < m_record_lengths.size())
-	{
-		if (m_header.PointDataRecordLength > m_record_lengths[m_internalPointDataRecordID])
-		{
-			m_containsExtraBytes = true;
-			m_extraByteCount = m_header.PointDataRecordLength - m_record_lengths[m_internalPointDataRecordID];
-		}
-	}
+	// Set Content Flags
+	setContentFlags();
 
 	// If end of file was reached during reading then clear bits to allow further reading and seeking
 	if (lasBin.eof()) {
