@@ -132,7 +132,7 @@ protected:
 	size_t	m_extraByteCount			= 0;
 
 	// Internal Point Data ID because index in PDRF list does not have to coincide with PDRF itself
-	size_t m_internalPointDataRecordID	= 0;
+	int m_internalPointDataRecordID	= -1;
 
 	// Constants and byte offsets
 	const std::vector<unsigned char> m_supported_record_formats	{ 0,   1,  2,  3,  4,  5,  6,  7,  8,  9, 10 };
