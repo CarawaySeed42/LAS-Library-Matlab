@@ -73,10 +73,7 @@ void LASdataReader::ReadLASheader(std::ifstream& lasBin)
 		m_numberOfPointsToRead = (uint_fast64_t)m_headerExt4.numberOfPointRecords;
 	}
 
-	// Set internal record format id
-	setInternalRecordFormatID();
-
-	// Set Content Flags
+	// Set internal record format id and Content Flags
 	setContentFlags();
 
 	// If end of file was reached during reading then clear bits to allow further reading and seeking
@@ -471,7 +468,7 @@ bool LASdataReader::CheckHeaderConsistency(std::ifstream& lasBin)
 	}
 
 	// Check if point data length is longer than allowed min
-	if (m_internalPointDataRecordID != -1 && m_internalPointDataRecordID < m_record_lengths.size())
+	if (m_internalPointDataRecordID != -1)
 	{
 		if (m_header.PointDataRecordLength < m_minAllowedRecordLength) {
 			char buffer[100];

@@ -23,8 +23,12 @@ inline void LAS_IO::setInternalRecordFormatID()
 // Set Flags for colors, time, wave packets, NIR, VLR and extrabytes
 inline void LAS_IO::setContentFlags()
 {
-
 	setInternalRecordFormatID();
+
+	// No flags set if point data record format unknown
+	if (m_internalPointDataRecordID == -1) {
+		return;
+	}
 
 	m_containsTime = false;
 	if (m_time_Byte[m_internalPointDataRecordID] != 0) {
