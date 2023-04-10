@@ -12,7 +12,7 @@ inline void LAS_IO::setInternalRecordFormatID()
 
 	if (it != m_supported_record_formats.end())
 	{
-		m_internalPointDataRecordID = static_cast<size_t>(std::distance(m_supported_record_formats.begin(), it));
+		m_internalPointDataRecordID = static_cast<int>(std::distance(m_supported_record_formats.begin(), it));
 	}
 	else
 	{
