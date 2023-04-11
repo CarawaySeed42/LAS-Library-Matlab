@@ -18,7 +18,7 @@
 % This option can be turned on by setting "write_as_uint16" to true
 %
 % For simplicity: Normals have already been calculated and are laoded from
-% file mat/pcnormals.mat
+% file mat/pCloudNormals.mat
 
 write_as_uint16 = false;
 
@@ -43,7 +43,7 @@ pcloud = readLASfile(lasFilePath);
 
 %% Calculate Point Cloud Normals
 fprintf('     Load Normals...\n');
-load('mat/pcnormals.mat')
+load('mat/pCloudNormals.mat')
 
 %% Add extrabytes
 fprintf('     Creating Extra Bytes...\n');
@@ -51,9 +51,9 @@ extraNames = {'vX', 'vY', 'vZ'};
 extrabytes = Extrabytes(extraNames);
 
 %% Add Data
-extrabytes.SetData(extrabytes.ExtrabyteNames{1}, pcnormals(:,1));
-extrabytes.SetData(extrabytes.ExtrabyteNames{2}, pcnormals(:,2));
-extrabytes.SetData(extrabytes.ExtrabyteNames{3}, pcnormals(:,3));
+extrabytes.SetData(extrabytes.ExtrabyteNames{1}, pCloudNormals(:,1));
+extrabytes.SetData(extrabytes.ExtrabyteNames{2}, pCloudNormals(:,2));
+extrabytes.SetData(extrabytes.ExtrabyteNames{3}, pCloudNormals(:,3));
 
 %% Set the data type
 % We will choose the data type uint16 which takes up 2 byte per
@@ -131,9 +131,9 @@ pcloud_new = readLASfile(outPath);
 extrabytes = decode_extrabytes(pcloud_new);
 
 % Output the maximum deviation of calculated normals and compressed normals
-devX = abs(double(extrabytes.vX.decoded_data) - pcnormals(:,1));
-devY = abs(double(extrabytes.vY.decoded_data) - pcnormals(:,2));
-devZ = abs(double(extrabytes.vZ.decoded_data) - pcnormals(:,3));
+devX = abs(double(extrabytes.vX.decoded_data) - pCloudNormals(:,1));
+devY = abs(double(extrabytes.vY.decoded_data) - pCloudNormals(:,2));
+devZ = abs(double(extrabytes.vZ.decoded_data) - pCloudNormals(:,3));
 maxDeviation = max(max([devX, devY, devZ]));
 
 fprintf('\n     Checking results...!\n');
