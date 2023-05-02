@@ -272,11 +272,11 @@ void LASdataWriter::WriteExtVLR(std::ofstream& lasBin, const mxArray* matlabInpu
 {
 	mxArray* pExtVLRfield = mxGetField(matlabInput, 0, "extendedvariables");
 
-	for (size_t i = 0; i < m_header.numberOfVariableLengthRecords; ++i) {
+	for (size_t i = 0; i < m_headerExt4.numberOfExtendedVariableLengthRecords; ++i) {
 
 		// Get header, write header, then write data
 		getExtVLRHeader(pExtVLRfield, i);
-		lasBin.write(m_ExtVLRHeader.extvlrhBytes, 54);
+		lasBin.write(m_ExtVLRHeader.extvlrhBytes, 60);
 
 		// Get and write data
 		if (m_ExtVLRHeader.recordLengthAfterHeader > 0) {
