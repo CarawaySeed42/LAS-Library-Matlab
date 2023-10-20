@@ -41,229 +41,249 @@ inputIsLegacyLasdata = 0;
 
 keepCreationDate = 0;
 
-try
-%% Input and header checks    
-    % Safe source PDRF for the transformation of bit fields later
-    sourcePDRF = las.header.point_data_format;
-    
-    if nargin > 4
-        las.header.point_data_format = pointformat;
+%% Input and header checks
+% Safe source PDRF for the transformation of bit fields later
+sourcePDRF = las.header.point_data_format;
+
+if nargin > 4
+    las.header.point_data_format = pointformat;
+end
+if nargin > 3
+    las.header.version_minor = minorversion;
+end
+if nargin > 2
+    las.header.version_major = majorversion;
+end
+if nargin == 6
+    if isfield(optional, 'keepCreationDate')
+        keepCreationDate = optional.keepCreationDate;
     end
-    if nargin > 3
-        las.header.version_minor = minorversion;
+end
+if nargin < 2
+    error('Not enough input arguments! Needs at least las and filename')
+end
+
+% Create output directory if doesn't exist (isdir for backwards comp)
+[pathtmp,filenametmp,ext]=fileparts(filename);
+if ~isdir(pathtmp)
+    mkdir(pathtmp);
+end
+if ~strcmp(ext,'.las')
+    warning('Extension of file changed to .las');
+    filename = fullfile(pathtmp, strcat(filenametmp, '.las'));
+end
+
+% Provide backwards compatibility to writeLas from lasdata
+if (isfield(las.header, 'file_creation_daobj'))
+    if (isfield(las.header.file_creation_daobj, 'y') && ~isfield(las.header, 'file_creation_day_of_year'))
+        % Copy day of year from lasdata to new struct layout
+        las.header.file_creation_day_of_year = las.header.file_creation_dalas.y;
+        inputIsLegacyLasdata = 1;
     end
-    if nargin > 2
-        las.header.version_major = majorversion;
-    end
-    if nargin == 6
-        if isfield(optional, 'keepCreationDate')
-            keepCreationDate = optional.keepCreationDate;
-        end
-    end
-    if nargin < 2
-        error('Not enough input arguments! Needs at least las and filename')
-    end
-    
-    % Create output directory if doesn't exist (isdir for backwards comp)
-    [pathtmp,~,ext]=fileparts(filename);
-    if ~isdir(pathtmp) 
-        mkdir(pathtmp);
-    end 
-    if ~strcmp(ext,'.las')
-       error('writeStruct2las: Output File does not have extension .las !');
-    end
-    
-    % Provide backwards compatibility to writeLas from lasdata
-    if (isfield(las.header, 'file_creation_daobj'))
-        if (isfield(las.header.file_creation_daobj, 'y') && ~isfield(las.header, 'file_creation_day_of_year'))
-            % Copy day of year from lasdata to new struct layout
-            las.header.file_creation_day_of_year = las.header.file_creation_dalas.y;
-            inputIsLegacyLasdata = 1;
-        end
-    end
-    
-    % Check header consitency and format accordingly
-    lasHeader = PrepareHeader(las, keepCreationDate);
-   
+end
+
+% Check header consitency and format accordingly
+lasHeader = PrepareHeader(las, keepCreationDate);
+
 %% Check if data is compatible with chosen point data record format
-    % No function for this task to make sure matlab doesn't copy the whole
-    % structure if changes to it are made
-    pointCount = lasHeader.number_of_point_records;
-    
-    % If point count too big or PDRF 6-10 is used then version minor 4 
-    % is necessary
-    if pointCount > 2^31-1 || las.header.point_data_format > 5
-        las.header.version_minor = 4;
-    end
-    
-    % Check if X, Y, Z have pointCount points
-    if length(las.x) ~= pointCount || length(las.y) ~= pointCount || length(las.z) ~= pointCount
-        error('X,Y,Z do not all have a length of point count %d', pointCount)
-    end
-    
-    % Zero Padding of necessary fields if their count does not match the
-    % point count
-    % Intensity
-    if length(las.intensity) ~= pointCount
-        warning('Zero padding of intensity necessary')
-        las.intensity = ZeroPaddingOfField(las, pointCount, 'intensity', 'uint16');
-    end
-    
-    % Bitfields
-    if length(las.bits) ~= pointCount
-        warning('Zero padding of bit values necessary')
-        las.bits = ZeroPaddingOfField(las, pointCount, 'bits', 'uint8');
-    end
-    
-    if lasHeader.point_data_format > 5 && isempty(las.bits2)
-        warning('Zero padding of bit2 values necessary')
-        las.bits2 = ZeroPaddingOfField(las, pointCount, 'bits2', 'uint8');
-    end
-    
-    if (sourcePDRF < 6 && lasHeader.point_data_format > 5)
-        % Decode and encode bitfields for specified data format
-        bitfields = decode_bit_fields(las, 'class');
-        bitfields.Extend();
-        bitfields.classification_flags = zeros(pointCount, 1, 'uint8');
-        bitfields.scanner_channel = zeros(pointCount, 1, 'uint8');
-        las = encode_bit_fields(las, bitfields);
-        
-    elseif (sourcePDRF > 5 && lasHeader.point_data_format < 6)
-        % Decode and encode bitfields for specified data format
-        bitfields = decode_bit_fields(las, 'class');
-        bitfields.Shorten();
-        las = encode_bit_fields(las, bitfields);
-    end
+% No function for this task to make sure matlab doesn't copy the whole
+% structure if changes to it are made
+pointCount = lasHeader.number_of_point_records;
 
-    % Classification
-    if length(las.classification) ~= pointCount
-        warning('Zero padding of classification necessary')
-        las.classification = ZeroPaddingOfField(las, pointCount, 'classification', 'uint8');
-    end
+% If point count too big or PDRF 6-10 is used then version minor 4
+% is necessary
+if pointCount > 2^31-1 || las.header.point_data_format > 5
+    las.header.version_minor = 4;
+end
+
+% Check if X, Y, Z have pointCount points
+if length(las.x) ~= pointCount || length(las.y) ~= pointCount || length(las.z) ~= pointCount
+    error('X,Y,Z do not all have a length of point count %d', pointCount)
+end
+
+% Zero Padding of necessary fields if their count does not match the
+% point count
+% Intensity
+if length(las.intensity) ~= pointCount
+    warning('Zero padding of intensity necessary')
+    las.intensity = ZeroPaddingOfField(las, pointCount, 'intensity', 'uint16');
+end
+
+las.intensity = FixDataType(las.intensity, 'uint16');
+
+% Bitfields
+if length(las.bits) ~= pointCount
+    warning('Zero padding of bit values necessary')
+    las.bits = ZeroPaddingOfField(las, pointCount, 'bits', 'uint8');
+end
+
+las.bits = FixDataType(las.bits, 'uint8');
+
+if lasHeader.point_data_format > 5 && isempty(las.bits2)
+    warning('Zero padding of bit2 values necessary')
+    las.bits2 = ZeroPaddingOfField(las, pointCount, 'bits2', 'uint8');
+end
+
+las.bits2 = FixDataType(las.bits2, 'uint8');
+
+if (sourcePDRF < 6 && lasHeader.point_data_format > 5)
+    % Decode and encode bitfields for specified data format
+    bitfields = decode_bit_fields(las, 'class');
+    bitfields.Extend();
+    bitfields.classification_flags = zeros(pointCount, 1, 'uint8');
+    bitfields.scanner_channel = zeros(pointCount, 1, 'uint8');
+    las = encode_bit_fields(las, bitfields);
     
-    % Scan Angle depending on PDRF (can have different data types)
+elseif (sourcePDRF > 5 && lasHeader.point_data_format < 6)
+    % Decode and encode bitfields for specified data format
+    bitfields = decode_bit_fields(las, 'class');
+    bitfields.Shorten();
+    las = encode_bit_fields(las, bitfields);
+end
+
+% Classification
+if length(las.classification) ~= pointCount
+    warning('Zero padding of classification necessary')
+    las.classification = ZeroPaddingOfField(las, pointCount, 'classification', 'uint8');
+end
+
+las.classification = FixDataType(las.classification, 'uint8');
+
+% Scan Angle depending on PDRF (can have different data types)
+if length(las.scan_angle) ~= pointCount
+    warning('Zero padding of scan angle necessary')
     if lasHeader.point_data_format > 5
-        if isa(las.scan_angle(1), 'int8')
-           las.scan_angle = int16(las.scan_angle);
-        end
+        las.scan_angle = ZeroPaddingOfField(las, pointCount, 'scan_angle', 'int16');
     else
-        if isa(las.scan_angle(1), 'int16')
-           las.scan_angle = int8(las.scan_angle);
-        end
+        las.scan_angle = ZeroPaddingOfField(las, pointCount, 'scan_angle', 'int8');
     end
-    
-    if length(las.scan_angle) ~= pointCount
-        warning('Zero padding of scan angle necessary')
-        if lasHeader.point_data_format > 5
-            las.scan_angle = ZeroPaddingOfField(las, pointCount, 'scan_angle', 'int16');
-        else
-            las.scan_angle = ZeroPaddingOfField(las, pointCount, 'scan_angle', 'int8');
-        end
+end
+
+if lasHeader.point_data_format > 5
+    if isa(las.scan_angle(1), 'int8')
+        las.scan_angle = int16(las.scan_angle);
     end
-    
-    % User Data
-    if length(las.user_data) ~= pointCount
-        warning('Zero padding of user data necessary')
-        las.user_data = ZeroPaddingOfField(las, pointCount, 'user_data', 'uint8');
+else
+    if isa(las.scan_angle(1), 'int16')
+        las.scan_angle = int8(las.scan_angle);
     end
-    
-    % Point Source ID
-    if length(las.point_source_id) ~= pointCount
-        warning('Zero padding of point source id necessary')
-        las.point_source_id = ZeroPaddingOfField(las, pointCount, 'point_source_id', 'uint16');
+end
+
+% User Data
+if length(las.user_data) ~= pointCount
+    warning('Zero padding of user data necessary')
+    las.user_data = ZeroPaddingOfField(las, pointCount, 'user_data', 'uint8');
+end
+
+las.user_data = FixDataType(las.user_data, 'uint8');
+
+% Point Source ID
+if length(las.point_source_id) ~= pointCount
+    warning('Zero padding of point source id necessary')
+    las.point_source_id = ZeroPaddingOfField(las, pointCount, 'point_source_id', 'uint16');
+end
+
+las.point_source_id = FixDataType(las.point_source_id, 'uint16');
+
+% GPS Time
+if any(lasHeader.point_data_format == LASContainsTime)
+    if length(las.gps_time) ~= pointCount
+        warning('Zero padding of gps time necessary')
+        las.gps_time = ZeroPaddingOfField(las, pointCount, 'gps_time', 'double');
     end
-    
-    % GPS Time
-    if any(lasHeader.point_data_format == LASContainsTime)
-        if length(las.gps_time) ~= pointCount
-            warning('Zero padding of gps time necessary')
-            las.gps_time = ZeroPaddingOfField(las, pointCount, 'gps_time', 'double');
-        end
+end
+
+las.gps_time = FixDataType(las.gps_time, 'double');
+
+% Color
+if any(lasHeader.point_data_format == LASContainsColor)
+    if length(las.red) ~= pointCount
+        warning('Zero padding of Red Channel necessary')
+        las.red = ZeroPaddingOfField(las, pointCount, 'red', 'uint16');
     end
+    las.red = FixDataType(las.red, 'uint16');
     
-    % Color
-    if any(lasHeader.point_data_format == LASContainsColor)
-        if length(las.red) ~= pointCount
-            warning('Zero padding of Red Channel necessary')
-            las.red = ZeroPaddingOfField(las, pointCount, 'red', 'uint16');
-        end
-        if length(las.green) ~= pointCount
-            warning('Zero padding of Green Channel necessary')
-            las.green = ZeroPaddingOfField(las, pointCount, 'green', 'uint16');
-        end
-        if length(las.blue) ~= pointCount
-            warning('Zero padding of Blue Channel necessary')
-            las.blue = ZeroPaddingOfField(las, pointCount, 'blue', 'uint16');
-        end
+    if length(las.green) ~= pointCount
+        warning('Zero padding of Green Channel necessary')
+        las.green = ZeroPaddingOfField(las, pointCount, 'green', 'uint16');
     end
+    las.green = FixDataType(las.green, 'uint16');
     
-    % Near Infrared
-    if any(lasHeader.point_data_format == LASContainsNIR)
-        if length(las.nir) ~= pointCount
-            warning('Zero padding of Near Infrared Channel necessary')
-            las.nir = ZeroPaddingOfField(las, pointCount, 'nir', 'uint16');
-        end
+    if length(las.blue) ~= pointCount
+        warning('Zero padding of Blue Channel necessary')
+        las.blue = ZeroPaddingOfField(las, pointCount, 'blue', 'uint16');
     end
-    
-    % Wave Packets
-    if any(lasHeader.point_data_format == LASContainsWavePackets)
-        if length(las.wave_packet_descriptor) ~= pointCount
-            warning('Zero padding of wave packet descriptor necessary')
-            las.wave_packet_descriptor = ZeroPaddingOfField(las, pointCount, 'wave_packet_descriptor', 'uint8');
-        end
-        if length(las.wave_byte_offset) ~= pointCount
-            warning('Zero padding of wave byte offset necessary')
-            las.wave_byte_offset = ZeroPaddingOfField(las, pointCount, 'wave_byte_offset', 'uint64');
-        end
-        if length(las.wave_packet_size) ~= pointCount
-            warning('Zero padding of wave packet size necessary')
-            las.wave_packet_size = ZeroPaddingOfField(las, pointCount, 'wave_packet_size', 'uint32');
-        end
-        if length(las.wave_return_point) ~= pointCount
-            warning('Zero padding of wave return point necessary')
-            las.wave_return_point = ZeroPaddingOfField(las, pointCount, 'wave_return_point', 'single');
-        end
-        if length(las.Xt) ~= pointCount
-            warning('Zero padding of Parametric dX necessary')
-            las.Xt = ZeroPaddingOfField(las, pointCount, 'Xt', 'single');
-        end
-        if length(las.Yt) ~= pointCount
-            warning('Zero padding of Parametric dY necessary')
-            las.Yt = ZeroPaddingOfField(las, pointCount, 'Yt', 'single');
-        end
-        if length(las.Zt) ~= pointCount
-            warning('Zero padding of Parametric dZ necessary')
-            las.Zt = ZeroPaddingOfField(las, pointCount, 'Zt', 'single');
-        end 
+    las.blue = FixDataType(las.blue, 'uint16');
+end
+
+% Near Infrared
+if any(lasHeader.point_data_format == LASContainsNIR)
+    if length(las.nir) ~= pointCount
+        warning('Zero padding of Near Infrared Channel necessary')
+        las.nir = ZeroPaddingOfField(las, pointCount, 'nir', 'uint16');
     end
-    
-    % Transpose Extra Bytes if input was legacy lasdata class
-    if inputIsLegacyLasdata
-        las.extradata = las.extradata';
+end
+
+las.nir = FixDataType(las.nir, 'uint16');
+
+% Wave Packets
+if any(lasHeader.point_data_format == LASContainsWavePackets)
+    if length(las.wave_packet_descriptor) ~= pointCount
+        warning('Zero padding of wave packet descriptor necessary')
+        las.wave_packet_descriptor = ZeroPaddingOfField(las, pointCount, 'wave_packet_descriptor', 'uint8');
     end
-    
-    % Update Header
-    las.header = lasHeader;
-    
-    % Check types because Interleaved Complex getter return nullptr on
-    % wrong type
-    las = checkFieldTypes(las);
-    
-    % Check variable records for typing and array lengths
-    las = checkVariableRecords(las);
-    
-    
+    las.wave_packet_descriptor = FixDataType(las.wave_packet_descriptor, 'uint8');
+    if length(las.wave_byte_offset) ~= pointCount
+        warning('Zero padding of wave byte offset necessary')
+        las.wave_byte_offset = ZeroPaddingOfField(las, pointCount, 'wave_byte_offset', 'uint64');
+    end
+    las.wave_byte_offset = FixDataType(las.wave_byte_offset, 'uint64');
+    if length(las.wave_packet_size) ~= pointCount
+        warning('Zero padding of wave packet size necessary')
+        las.wave_packet_size = ZeroPaddingOfField(las, pointCount, 'wave_packet_size', 'uint32');
+    end
+    las.wave_packet_size = FixDataType(las.wave_packet_size, 'uint32');
+    if length(las.wave_return_point) ~= pointCount
+        warning('Zero padding of wave return point necessary')
+        las.wave_return_point = ZeroPaddingOfField(las, pointCount, 'wave_return_point', 'single');
+    end
+    las.wave_return_point = FixDataType(las.wave_return_point, 'single');
+    if length(las.Xt) ~= pointCount
+        warning('Zero padding of Parametric dX necessary')
+        las.Xt = ZeroPaddingOfField(las, pointCount, 'Xt', 'single');
+    end
+    las.Xt = FixDataType(las.Xt, 'single');
+    if length(las.Yt) ~= pointCount
+        warning('Zero padding of Parametric dY necessary')
+        las.Yt = ZeroPaddingOfField(las, pointCount, 'Yt', 'single');
+    end
+    las.Yt = FixDataType(las.Yt, 'single');
+    if length(las.Zt) ~= pointCount
+        warning('Zero padding of Parametric dZ necessary')
+        las.Zt = ZeroPaddingOfField(las, pointCount, 'Zt', 'single');
+    end
+    las.Zt = FixDataType(las.Zt, 'single');
+end
+
+% Transpose Extra Bytes if input was legacy lasdata class
+if inputIsLegacyLasdata
+    las.extradata = las.extradata';
+end
+
+% Update Header
+las.header = lasHeader;
+
+% Check types because Interleaved Complex getter return nullptr on
+% wrong type
+las = checkHeaderFieldTypes(las);
+
+% Check variable records for typing and array lengths
+las = checkVariableRecords(las);
+
+
 %% Now finally write the data to drive
-    writeLASfile_cpp(las, char(filename));
-    
-catch MException
-end
+writeLASfile_cpp(las, char(filename));
 
-
-% If Exception was thrown then throw it again after all files are closed
-if ~isempty(MException)
-   rethrow(MException);
-end
 
 end
     
@@ -478,7 +498,7 @@ end
 
 end
 
-function las = checkFieldTypes(las)
+function las = checkHeaderFieldTypes(las)
 
 % Check header
 headerFields = fieldnames(las.header);
@@ -596,4 +616,10 @@ function zeroPaddedField = ZeroPaddingOfField(structure, count, fieldname, datat
 paddingArray = zeros(count,1,datatype);
 paddingArray(1:length(structure.(fieldname))) = structure.(fieldname);
 zeroPaddedField = paddingArray;
+end
+
+function lasField = FixDataType(lasField, datatype)
+if ~isa(lasField, datatype)
+    lasField = cast(lasField, datatype);
+end
 end
