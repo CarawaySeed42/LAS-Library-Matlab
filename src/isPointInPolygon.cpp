@@ -94,28 +94,32 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 	const int threadChunksize = numberOfThreads > 1 ? static_cast<int>((size_pointsX / (numberOfThreads * 50)) + 1) : static_cast<int>(size_pointsX);
 	omp_set_num_threads(numberOfThreads);
 
-	if (algorithmInput == WindingNumberIncludeEdges)
+	switch (algorithmInput)
 	{
+	case WindingNumberIncludeEdges:
+
 #pragma omp parallel for schedule(dynamic, threadChunksize) default(shared) if (size_pointsX > 10000 || size_polyX > 150)
 		for (int i = 0; i < size_pointsX; ++i) {
 			result[i] = windingNumberIncludeEdges(polyX, polyY, pointsX[i], pointsY[i], size_polyX);
 		}
-	}
-	else if (algorithmInput == Raycast)
-	{
+		break;
+
+	case Raycast:
+
 #pragma omp parallel for schedule(dynamic, threadChunksize) default(shared) if (size_pointsX > 10000 || size_polyX > 150)
 		for (int i = 0; i < size_pointsX; ++i) {
 			result[i] = raycast(polyX, polyY, pointsX[i], pointsY[i], size_polyX);
 		}
-	}
-	else
-	{
+		break;
+
+	default:
+
 #pragma omp parallel for schedule(dynamic, threadChunksize) default(shared) if (size_pointsX > 10000 || size_polyX > 150)
 		for (int i = 0; i < size_pointsX; ++i) {
 			result[i] = windingNumber(polyX, polyY, pointsX[i], pointsY[i], size_polyX);
 		}
+		break;
 	}
-	
 }
 
 // Tests if point is in polygon using the raycast algorithm
