@@ -12,15 +12,15 @@ function las = writeLASfile(las, filename, majorversion, minorversion, pointform
 %   elements then the array will be padded with zeros.
 %   Header coordinate offsets and scale factor have to be provided 
 %   by the user.
-%   Retains ompatibility with lasdata matlab class by
+%   Retains compatibility with lasdata matlab class by
 %   Teemu Kumpumäki (2016)
 %
 %   Input:
 %       las [struct]        : Struct containing point cloud data
 %       filename [string]   : Full Path to output file
-%       majorversion [uint] : Major Version of output LAS File
-%       minorversion [uint] : Minor Verison of output LAS File
-%       pointformat [uint]  : Point Data Record Format of output LAS File
+%       majorversion [uint] : Optional Major Version of output LAS File
+%       minorversion [uint] : Optional Minor Verison of output LAS File
+%       pointformat [uint]  : Optional Point Data Record Format of output LAS File
 %       optional [struct]   : Optional input arguments
 %
 %       optional options:
@@ -100,6 +100,10 @@ end
 if length(las.x) ~= pointCount || length(las.y) ~= pointCount || length(las.z) ~= pointCount
     error('X,Y,Z do not all have a length of point count %d', pointCount)
 end
+
+las.x = FixDataType(las.x, 'double');
+las.y = FixDataType(las.y, 'double');
+las.z = FixDataType(las.z, 'double');
 
 % Zero Padding of necessary fields if their count does not match the
 % point count

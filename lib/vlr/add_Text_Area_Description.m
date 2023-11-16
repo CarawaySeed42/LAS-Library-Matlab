@@ -18,7 +18,7 @@ function las = add_Text_Area_Description(las, description)
 %
 %   Caution: If a VLR of this kind already exists, then it will be
 %   overwritten because only one VLR of this kind is allowed per file
-%   If necessary because the payload is too big, then Extended VLR is used
+%   If necessary, because the payload is too big, then Extended VLR is used
 VLR_index = [];
 ExtVLR_index = [];
 useExtVLR = false;
