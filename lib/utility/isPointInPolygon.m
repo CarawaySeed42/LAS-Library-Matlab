@@ -15,10 +15,10 @@ function isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads,
 % available concurrent threads of the CPU, if the number is too big.
 % Number of threads will be set to max available threads if input is zero
 %
-% Input:        polyX [nx1 double]  :	X-Coordinates of polygon vertices
-%               polyY [nx1 double]  :	Y-Coordinates of polygon vertices
-%               pointsX [nx1 double]:	X-Coordinates of query points
-%               pointsY [nx1 double]:	Y-Coordinates of query points
+% Input:        polyX [nx1 float]  :	X-Coordinates of polygon vertices
+%               polyY [nx1 float]  :	Y-Coordinates of polygon vertices
+%               pointsX [nx1 float]:	X-Coordinates of query points
+%               pointsY [nx1 float]:	Y-Coordinates of query points
 %               numThreads [double] :   Max. number of threads used if
 %                                       above threshold (default is 1)
 %               algorithm [int]     :   0 == Winding Number (default)
@@ -49,6 +49,20 @@ if nargin < 5
 end
 if nargin < 6
     algorithm = 0;
+end
+
+% If input is neither fully double or single then cast to double
+isNotFloatingPoint = ...
+    ~(all([isa(polyX, 'double'), isa(polyY, 'double'),...
+           isa(pointsX, 'double'), isa(pointsY, 'double')]) |...
+      all([isa(polyX, 'single'), isa(polyY, 'single'),...
+           isa(pointsX, 'single'), isa(pointsY, 'single')]));
+       
+if isNotFloatingPoint
+    polyX   = double(polyX);
+    polyY   = double(polyY);
+    pointsX = double(pointsX);
+    pointsY = double(pointsY);
 end
 
 isInside = isPointInPolygon_cpp(polyX, polyY, pointsX, pointsY, numThreads, algorithm);

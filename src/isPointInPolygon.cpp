@@ -4,30 +4,35 @@
 
 #if MX_HAS_INTERLEAVED_COMPLEX
 
+#define GetDoubles	mxGetDoubles
+#define GetSingles	mxGetSingles
 #define GetLogicals	mxGetLogicals
 
 #else
 
+#define GetDoubles	(mxDouble*)	mxGetPr
+#define GetSingles	(mxSingle*)	mxGetPr
 #define GetLogicals	(mxLogical*)mxGetPr
 
 #endif
 
-inline bool raycast(const double* __restrict  polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount);
-inline bool windingNumber(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount);
-inline bool windingNumberIncludeEdges(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount);
+template<typename T>
+inline void Compute(mxArray* plhs[], const mxArray* prhs[], int nrhs, const T* __restrict polyX, const T* __restrict polyY, const T* __restrict pointsX, const T* __restrict pointsY);
+template<typename T>
+inline bool raycast(const T*  polyX, const T* __restrict polyY, const T& pointX, const T& pointY, const int& polyCount);
+template<typename T>
+inline bool windingNumber(const T* __restrict polyX, const T* __restrict polyY, const T& pointX, const T& pointY, const int& polyCount);
+template<typename T>
+inline bool windingNumberIncludeEdges(const T* __restrict polyX, const T* __restrict polyY, const T& pointX, const T& pointY, const int& polyCount);
 
 template<typename T>
 inline T isLeft(const T polyX_1, const T polyY_1, const T polyX_2, const T polyY_2, const T queryX, const T queryY);
 
 enum searchAlgorithm { WindingNumber, WindingNumberIncludeEdges, Raycast };
 
-void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) 
-{
 
-	const double* __restrict polyX, * polyY, * pointsX, * pointsY;	// Pointer to input data
-	polyX = polyY = pointsX = pointsY = nullptr;					
-	int numberOfThreads = 1;										// Number of processing threads
-	int algorithmInput = WindingNumber;								// Standard algorithm is winding number without including borders
+void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) 
+{				
 	
 	if (nrhs < 4 || nrhs > 6) {
 		mexErrMsgIdAndTxt("MEX:isPointInPolygon:nargin", "This function allows four to six input arguments!");
@@ -43,19 +48,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 	if (mxIsComplex(prhs[0]) || mxIsComplex(prhs[1]) || mxIsComplex(prhs[2]) || mxIsComplex(prhs[3])) {
 		mexErrMsgIdAndTxt("MEX:isPointInPolygon:typeargin", "Arguments are not allowed to be complex!");
 	}
-
-	// Set number if threads according to argument or available threads, depending on which is smaller
-	if (nrhs > 4) {
-		const int machine_num_threads	= std::thread::hardware_concurrency();
-		const int inputThreadNumber		= static_cast<int>(mxGetScalar(prhs[4]));
-
-		numberOfThreads					= inputThreadNumber   < machine_num_threads ? inputThreadNumber : machine_num_threads;
-		numberOfThreads					= numberOfThreads < 1 ? machine_num_threads : numberOfThreads;
-	}
-
-	if (nrhs > 5) {
-		algorithmInput = static_cast<int>(mxGetScalar(prhs[5]));
-	}
+	
 
 	// Get data sizes and check them
 	const size_t size_polyX	= mxGetNumberOfElements(prhs[0]);	// Number of Polygon X - Coordinates
@@ -75,56 +68,97 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[])
 		mexErrMsgIdAndTxt("MEX:isPointInPolygon:sizeargin", "Input with more elements than %d not implemented!", INT32_MAX);
 	}
 
-	// Get Data
-	polyX	= mxGetPr(prhs[0]);
-	polyY	= mxGetPr(prhs[1]);
-	pointsX	= mxGetPr(prhs[2]);
-	pointsY	= mxGetPr(prhs[3]);
+	// Compute Points In Polygon according to input type
+	if (mxIsDouble(prhs[0]))
+	{
+		const double* __restrict polyX = GetDoubles(prhs[0]);
+		const double* __restrict polyY = GetDoubles(prhs[1]);
+		const double* __restrict pointsX = GetDoubles(prhs[2]);
+		const double* __restrict pointsY = GetDoubles(prhs[3]);
+
+		Compute(plhs, prhs, nrhs, polyX, polyY, pointsX, pointsY);
+	}
+	else if (mxIsSingle(prhs[0]))
+	{
+		const float* __restrict polyX = GetSingles(prhs[0]);
+		const float* __restrict polyY = GetSingles(prhs[1]);
+		const float* __restrict pointsX = GetSingles(prhs[2]);
+		const float* __restrict pointsY = GetSingles(prhs[3]);
+
+		Compute(plhs, prhs, nrhs, polyX, polyY, pointsX, pointsY);
+	}
+	else
+	{
+		mexErrMsgIdAndTxt("MEX:isPointInPolygon:argin", "Input arrays must be single or double precision float and of the same type!");
+	}
+	
+	
+}
+
+template<typename T>
+inline void Compute(mxArray* plhs[], const mxArray* prhs[], int nrhs, const T* __restrict polyX, const T* __restrict polyY, const T* __restrict pointsX, const T* __restrict pointsY)
+{
+	int numberOfThreads = 1;										// Number of processing threads
+	int algorithmInput = WindingNumber;								// Standard algorithm is winding number without including borders
+
+	// Set number if threads according to argument or available threads, depending on which is smaller
+	if (nrhs > 4) {
+		const int machine_num_threads	= std::thread::hardware_concurrency();
+		const int inputThreadNumber		= static_cast<int>(mxGetScalar(prhs[4]));
+
+		numberOfThreads					= inputThreadNumber   < machine_num_threads ? inputThreadNumber : machine_num_threads;
+		numberOfThreads					= numberOfThreads < 1 ? machine_num_threads : numberOfThreads;
+	}
+
+	if (nrhs > 5) {
+		algorithmInput = static_cast<int>(mxGetScalar(prhs[5]));
+	}
+
+	const size_t size_polyX		= mxGetNumberOfElements(prhs[0]);	// Number of Polygon X - Coordinates
+	const size_t size_pointsX	= mxGetNumberOfElements(prhs[2]);	// Number of Point Data X - Coordinates
 
 	// Check for nullptr
 	if (polyX == nullptr || polyY == nullptr || pointsX == nullptr || pointsY == nullptr) {
-		mexErrMsgIdAndTxt("MEX:isPointInPolygon:argin", "Can't get a valid pointer to all of the the input data!");
+		mexErrMsgIdAndTxt("MEX:isPointInPolygon:argin", "Can't get a valid pointer to all of the the input data! Do they have the same type?");
+		return;
 	}
 
 	// Allocate Output
 	plhs[0] = mxCreateLogicalMatrix(size_pointsX, 1);
 	mxLogical* result = mxGetLogicals(plhs[0]);
 
-	/*Run Point in Poly algorithm*/ 
+	/*Run Point in Poly algorithm*/
 	const int threadChunksize = numberOfThreads > 1 ? static_cast<int>((size_pointsX / (numberOfThreads * 50)) + 1) : static_cast<int>(size_pointsX);
 	omp_set_num_threads(numberOfThreads);
 
-	switch (algorithmInput)
+	if (algorithmInput == WindingNumberIncludeEdges)
 	{
-	case WindingNumberIncludeEdges:
-
 #pragma omp parallel for schedule(dynamic, threadChunksize) default(shared) if (size_pointsX > 10000 || size_polyX > 150)
 		for (int i = 0; i < size_pointsX; ++i) {
 			result[i] = windingNumberIncludeEdges(polyX, polyY, pointsX[i], pointsY[i], size_polyX);
 		}
-		break;
-
-	case Raycast:
-
+	}
+	else if (algorithmInput == Raycast)
+	{
 #pragma omp parallel for schedule(dynamic, threadChunksize) default(shared) if (size_pointsX > 10000 || size_polyX > 150)
 		for (int i = 0; i < size_pointsX; ++i) {
 			result[i] = raycast(polyX, polyY, pointsX[i], pointsY[i], size_polyX);
 		}
-		break;
-
-	default:
-
+	}
+	else
+	{
 #pragma omp parallel for schedule(dynamic, threadChunksize) default(shared) if (size_pointsX > 10000 || size_polyX > 150)
 		for (int i = 0; i < size_pointsX; ++i) {
 			result[i] = windingNumber(polyX, polyY, pointsX[i], pointsY[i], size_polyX);
 		}
-		break;
 	}
+
 }
 
 // Tests if point is in polygon using the raycast algorithm
 //	Returns: true if point inside polygon, false if otherwise
-inline bool raycast(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount)
+template<typename T>
+inline bool raycast(const T* __restrict polyX, const T* __restrict polyY, const T& pointX, const T& pointY, const int& polyCount)
 {
 	bool inside = false;
 
@@ -143,7 +177,8 @@ inline bool raycast(const double* __restrict polyX, const double* __restrict pol
 // Tests if the winding number for a query point and a polygon is unequal to zero. 
 // If so then the point is fully inside the polygon
 //	Returns: true if point inside polygon, false if otherwise
-inline bool windingNumber(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount)
+template<typename T>
+inline bool windingNumber(const T* __restrict polyX, const T* __restrict polyY, const T& pointX, const T& pointY, const int& polyCount)
 {
 	int winding_num = 0;  // Winding number counter
 
@@ -175,7 +210,8 @@ inline bool windingNumber(const double* __restrict polyX, const double* __restri
 // Tests if the winding number for a query point and a polygon is unequal to zero or if point is on border
 // If so then the point is fully inside the polygon
 //	Returns: true if point inside polygon or on border, false if otherwise
-inline bool windingNumberIncludeEdges(const double* __restrict polyX, const double* __restrict polyY, const double& pointX, const double& pointY, const int& polyCount)
+template<typename T>
+inline bool windingNumberIncludeEdges(const T* __restrict polyX, const T* __restrict polyY, const T& pointX, const T& pointY, const int& polyCount)
 {
 	int winding_num = 0;  // Winding number counter
 
