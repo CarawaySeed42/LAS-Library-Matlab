@@ -110,7 +110,7 @@ las.z = FixDataType(las.z, 'double');
 % Intensity
 if length(las.intensity) ~= pointCount
     warning('Zero padding of intensity necessary')
-    las.intensity = ZeroPaddingOfField(las, pointCount, 'intensity', 'uint16');
+    las.intensity = ZeroPadField(las, pointCount, 'intensity', 'uint16');
 end
 
 las.intensity = FixDataType(las.intensity, 'uint16');
@@ -118,14 +118,14 @@ las.intensity = FixDataType(las.intensity, 'uint16');
 % Bitfields
 if length(las.bits) ~= pointCount
     warning('Zero padding of bit values necessary')
-    las.bits = ZeroPaddingOfField(las, pointCount, 'bits', 'uint8');
+    las.bits = ZeroPadField(las, pointCount, 'bits', 'uint8');
 end
 
 las.bits = FixDataType(las.bits, 'uint8');
 
-if lasHeader.point_data_format > 5 && isempty(las.bits2)
+if (lasHeader.point_data_format > 5) && (length(las.bits2) ~= pointCount)
     warning('Zero padding of bit2 values necessary')
-    las.bits2 = ZeroPaddingOfField(las, pointCount, 'bits2', 'uint8');
+    las.bits2 = ZeroPadField(las, pointCount, 'bits2', 'uint8');
 end
 
 las.bits2 = FixDataType(las.bits2, 'uint8');
@@ -148,7 +148,7 @@ end
 % Classification
 if length(las.classification) ~= pointCount
     warning('Zero padding of classification necessary')
-    las.classification = ZeroPaddingOfField(las, pointCount, 'classification', 'uint8');
+    las.classification = ZeroPadField(las, pointCount, 'classification', 'uint8');
 end
 
 las.classification = FixDataType(las.classification, 'uint8');
@@ -157,9 +157,9 @@ las.classification = FixDataType(las.classification, 'uint8');
 if length(las.scan_angle) ~= pointCount
     warning('Zero padding of scan angle necessary')
     if lasHeader.point_data_format > 5
-        las.scan_angle = ZeroPaddingOfField(las, pointCount, 'scan_angle', 'int16');
+        las.scan_angle = ZeroPadField(las, pointCount, 'scan_angle', 'int16');
     else
-        las.scan_angle = ZeroPaddingOfField(las, pointCount, 'scan_angle', 'int8');
+        las.scan_angle = ZeroPadField(las, pointCount, 'scan_angle', 'int8');
     end
 end
 
@@ -176,7 +176,7 @@ end
 % User Data
 if length(las.user_data) ~= pointCount
     warning('Zero padding of user data necessary')
-    las.user_data = ZeroPaddingOfField(las, pointCount, 'user_data', 'uint8');
+    las.user_data = ZeroPadField(las, pointCount, 'user_data', 'uint8');
 end
 
 las.user_data = FixDataType(las.user_data, 'uint8');
@@ -184,7 +184,7 @@ las.user_data = FixDataType(las.user_data, 'uint8');
 % Point Source ID
 if length(las.point_source_id) ~= pointCount
     warning('Zero padding of point source id necessary')
-    las.point_source_id = ZeroPaddingOfField(las, pointCount, 'point_source_id', 'uint16');
+    las.point_source_id = ZeroPadField(las, pointCount, 'point_source_id', 'uint16');
 end
 
 las.point_source_id = FixDataType(las.point_source_id, 'uint16');
@@ -193,7 +193,7 @@ las.point_source_id = FixDataType(las.point_source_id, 'uint16');
 if any(lasHeader.point_data_format == LASContainsTime)
     if length(las.gps_time) ~= pointCount
         warning('Zero padding of gps time necessary')
-        las.gps_time = ZeroPaddingOfField(las, pointCount, 'gps_time', 'double');
+        las.gps_time = ZeroPadField(las, pointCount, 'gps_time', 'double');
     end
 end
 
@@ -203,19 +203,19 @@ las.gps_time = FixDataType(las.gps_time, 'double');
 if any(lasHeader.point_data_format == LASContainsColor)
     if length(las.red) ~= pointCount
         warning('Zero padding of Red Channel necessary')
-        las.red = ZeroPaddingOfField(las, pointCount, 'red', 'uint16');
+        las.red = ZeroPadField(las, pointCount, 'red', 'uint16');
     end
     las.red = FixDataType(las.red, 'uint16');
     
     if length(las.green) ~= pointCount
         warning('Zero padding of Green Channel necessary')
-        las.green = ZeroPaddingOfField(las, pointCount, 'green', 'uint16');
+        las.green = ZeroPadField(las, pointCount, 'green', 'uint16');
     end
     las.green = FixDataType(las.green, 'uint16');
     
     if length(las.blue) ~= pointCount
         warning('Zero padding of Blue Channel necessary')
-        las.blue = ZeroPaddingOfField(las, pointCount, 'blue', 'uint16');
+        las.blue = ZeroPadField(las, pointCount, 'blue', 'uint16');
     end
     las.blue = FixDataType(las.blue, 'uint16');
 end
@@ -224,7 +224,7 @@ end
 if any(lasHeader.point_data_format == LASContainsNIR)
     if length(las.nir) ~= pointCount
         warning('Zero padding of Near Infrared Channel necessary')
-        las.nir = ZeroPaddingOfField(las, pointCount, 'nir', 'uint16');
+        las.nir = ZeroPadField(las, pointCount, 'nir', 'uint16');
     end
 end
 
@@ -234,37 +234,37 @@ las.nir = FixDataType(las.nir, 'uint16');
 if any(lasHeader.point_data_format == LASContainsWavePackets)
     if length(las.wave_packet_descriptor) ~= pointCount
         warning('Zero padding of wave packet descriptor necessary')
-        las.wave_packet_descriptor = ZeroPaddingOfField(las, pointCount, 'wave_packet_descriptor', 'uint8');
+        las.wave_packet_descriptor = ZeroPadField(las, pointCount, 'wave_packet_descriptor', 'uint8');
     end
     las.wave_packet_descriptor = FixDataType(las.wave_packet_descriptor, 'uint8');
     if length(las.wave_byte_offset) ~= pointCount
         warning('Zero padding of wave byte offset necessary')
-        las.wave_byte_offset = ZeroPaddingOfField(las, pointCount, 'wave_byte_offset', 'uint64');
+        las.wave_byte_offset = ZeroPadField(las, pointCount, 'wave_byte_offset', 'uint64');
     end
     las.wave_byte_offset = FixDataType(las.wave_byte_offset, 'uint64');
     if length(las.wave_packet_size) ~= pointCount
         warning('Zero padding of wave packet size necessary')
-        las.wave_packet_size = ZeroPaddingOfField(las, pointCount, 'wave_packet_size', 'uint32');
+        las.wave_packet_size = ZeroPadField(las, pointCount, 'wave_packet_size', 'uint32');
     end
     las.wave_packet_size = FixDataType(las.wave_packet_size, 'uint32');
     if length(las.wave_return_point) ~= pointCount
         warning('Zero padding of wave return point necessary')
-        las.wave_return_point = ZeroPaddingOfField(las, pointCount, 'wave_return_point', 'single');
+        las.wave_return_point = ZeroPadField(las, pointCount, 'wave_return_point', 'single');
     end
     las.wave_return_point = FixDataType(las.wave_return_point, 'single');
     if length(las.Xt) ~= pointCount
         warning('Zero padding of Parametric dX necessary')
-        las.Xt = ZeroPaddingOfField(las, pointCount, 'Xt', 'single');
+        las.Xt = ZeroPadField(las, pointCount, 'Xt', 'single');
     end
     las.Xt = FixDataType(las.Xt, 'single');
     if length(las.Yt) ~= pointCount
         warning('Zero padding of Parametric dY necessary')
-        las.Yt = ZeroPaddingOfField(las, pointCount, 'Yt', 'single');
+        las.Yt = ZeroPadField(las, pointCount, 'Yt', 'single');
     end
     las.Yt = FixDataType(las.Yt, 'single');
     if length(las.Zt) ~= pointCount
         warning('Zero padding of Parametric dZ necessary')
-        las.Zt = ZeroPaddingOfField(las, pointCount, 'Zt', 'single');
+        las.Zt = ZeroPadField(las, pointCount, 'Zt', 'single');
     end
     las.Zt = FixDataType(las.Zt, 'single');
 end
@@ -616,7 +616,7 @@ terminatedArray(1:char_array_length) = uint8(stringInput(1:char_array_length));
 stringOutput = char(terminatedArray);
 end
 
-function zeroPaddedField = ZeroPaddingOfField(structure, count, fieldname, datatype)
+function zeroPaddedField = ZeroPadField(structure, count, fieldname, datatype)
 paddingArray = zeros(count,1,datatype);
 paddingArray(1:length(structure.(fieldname))) = structure.(fieldname);
 zeroPaddedField = paddingArray;
