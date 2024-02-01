@@ -36,7 +36,7 @@
 #endif
 
 constexpr auto size_char		= sizeof(char);
-constexpr auto size_signedchar	= sizeof(int8_t);
+constexpr auto size_int8		= sizeof(int8_t);
 constexpr auto size_uint8		= sizeof(uint8_t);
 constexpr auto size_double		= sizeof(double);
 constexpr auto size_float		= sizeof(float);
@@ -56,64 +56,58 @@ void LASdataWriter::WriteLASheader(std::ofstream& lasBin)
 	// Go to start of file
 	lasBin.seekp(0, lasBin.beg);
 
-	// Write every single header entry
+	// Write every single header entry, sizes are fixed and guaranteed during compilation
 	char FileSignature[] = "LASF";
-	std::strcpy(m_header.fileSignature, FileSignature);
+	std::strncpy(m_header.fileSignature, FileSignature, 4);
 
-	lasBin.write((char*)&FileSignature, 4);
-	lasBin.write((char*)&m_header.sourceID, 2);
-
-	lasBin.write((char*)&m_header.globalEncoding, 2);
-	lasBin.write((char*)&m_header.projectID_GUID_1, 4);
-	lasBin.write((char*)&m_header.projectID_GUID_2, 2);
-	lasBin.write((char*)&m_header.projectID_GUID_3, 2);
-	lasBin.write((char*)&m_header.projectID_GUID_4, 8);
-	lasBin.write((char*)&m_header.versionMajor, 1);
-	lasBin.write((char*)&m_header.versionMinor, 1);
-	lasBin.write((char*)&m_header.systemIdentifier, 32);
-	lasBin.write((char*)&m_header.generatingSoftware, 32);
-	lasBin.write((char*)&m_header.fileCreationDayOfYear, 2);
-	lasBin.write((char*)&m_header.fileCreationYear, 2);
-	lasBin.write((char*)&m_header.headerSize, 2);
-
-	lasBin.write((char*)&m_header.offsetToPointData, 4);
-	lasBin.write((char*)&m_header.numberOfVariableLengthRecords, 4);
-
-	lasBin.write((char*)&m_header.PointDataRecordFormat, 1);
-	lasBin.write((char*)&m_header.PointDataRecordLength, 2);
-	lasBin.write((char*)&m_header.LegacyNumberOfPointRecords, 4);
-	lasBin.write((char*)&m_header.LegacyNumberOfPointByReturn[0], 4);
-	lasBin.write((char*)&m_header.LegacyNumberOfPointByReturn[1], 4);
-	lasBin.write((char*)&m_header.LegacyNumberOfPointByReturn[2], 4);
-	lasBin.write((char*)&m_header.LegacyNumberOfPointByReturn[3], 4);
-	lasBin.write((char*)&m_header.LegacyNumberOfPointByReturn[4], 4);
-	lasBin.write((char*)&m_header.xScaleFactor, 8);
-	lasBin.write((char*)&m_header.yScaleFactor, 8);
-	lasBin.write((char*)&m_header.zScaleFactor, 8);
-	lasBin.write((char*)&m_header.xOffset, 8);
-	lasBin.write((char*)&m_header.yOffset, 8);
-	lasBin.write((char*)&m_header.zOffset, 8);
-	lasBin.write((char*)&m_header.maxX, 8);
-	lasBin.write((char*)&m_header.minX, 8);
-	lasBin.write((char*)&m_header.maxY, 8);
-	lasBin.write((char*)&m_header.minY, 8);
-	lasBin.write((char*)&m_header.maxZ, 8);
-	lasBin.write((char*)&m_header.minZ, 8);
+	lasBin.write(reinterpret_cast<char*>(&FileSignature), 4);
+	lasBin.write(reinterpret_cast<char*>(&m_header.sourceID), 2);
+	lasBin.write(reinterpret_cast<char*>(&m_header.globalEncoding), 2);
+	lasBin.write(reinterpret_cast<char*>(&m_header.projectID_GUID_1), 4);
+	lasBin.write(reinterpret_cast<char*>(&m_header.projectID_GUID_2), 2);
+	lasBin.write(reinterpret_cast<char*>(&m_header.projectID_GUID_3), 2);
+	lasBin.write(reinterpret_cast<char*>(&m_header.projectID_GUID_4), 8);
+	lasBin.write(reinterpret_cast<char*>(&m_header.versionMajor), 1);
+	lasBin.write(reinterpret_cast<char*>(&m_header.versionMinor), 1);
+	lasBin.write(reinterpret_cast<char*>(&m_header.systemIdentifier), 32);
+	lasBin.write(reinterpret_cast<char*>(&m_header.generatingSoftware), 32);
+	lasBin.write(reinterpret_cast<char*>(&m_header.fileCreationDayOfYear), 2);
+	lasBin.write(reinterpret_cast<char*>(&m_header.fileCreationYear), 2);
+	lasBin.write(reinterpret_cast<char*>(&m_header.headerSize), 2);//
+	lasBin.write(reinterpret_cast<char*>(&m_header.offsetToPointData), 4);
+	lasBin.write(reinterpret_cast<char*>(&m_header.numberOfVariableLengthRecords), 4);
+	lasBin.write(reinterpret_cast<char*>(&m_header.PointDataRecordFormat), 1);
+	lasBin.write(reinterpret_cast<char*>(&m_header.PointDataRecordLength), 2);
+	lasBin.write(reinterpret_cast<char*>(&m_header.LegacyNumberOfPointRecords), 4);
+	lasBin.write(reinterpret_cast<char*>(&m_header.LegacyNumberOfPointByReturn), 20);
+	lasBin.write(reinterpret_cast<char*>(&m_header.xScaleFactor), 8);
+	lasBin.write(reinterpret_cast<char*>(&m_header.yScaleFactor), 8);
+	lasBin.write(reinterpret_cast<char*>(&m_header.zScaleFactor), 8);
+	lasBin.write(reinterpret_cast<char*>(&m_header.xOffset), 8);
+	lasBin.write(reinterpret_cast<char*>(&m_header.yOffset), 8);
+	lasBin.write(reinterpret_cast<char*>(&m_header.zOffset), 8);
+	lasBin.write(reinterpret_cast<char*>(&m_header.maxX), 8);
+	lasBin.write(reinterpret_cast<char*>(&m_header.minX), 8);
+	lasBin.write(reinterpret_cast<char*>(&m_header.maxY), 8);
+	lasBin.write(reinterpret_cast<char*>(&m_header.minY), 8);
+	lasBin.write(reinterpret_cast<char*>(&m_header.maxZ), 8);
+	lasBin.write(reinterpret_cast<char*>(&m_header.minZ), 8);
+	
 
 	if (m_header.versionMajor == 1 && m_header.versionMinor > 2)
 	{
-		lasBin.write((char*)&m_headerExt3.startOfWaveFormData, 8);
+		lasBin.write(reinterpret_cast<char*>(&m_headerExt3.startOfWaveFormData), 8);
 	}
 	
 	if (m_header.versionMajor == 1 && m_header.versionMinor > 3)
 	{
-		lasBin.write((char*)&m_headerExt4.startOfFirstExtendedVariableLengthRecord, 8);
-		lasBin.write((char*)&m_headerExt4.numberOfExtendedVariableLengthRecords, 4);
-		lasBin.write((char*)&m_headerExt4.numberOfPointRecords, 8);
-		lasBin.write((char*)&m_headerExt4.numberOfPointsByReturn, 120);
+		lasBin.write(reinterpret_cast<char*>(&m_headerExt4.startOfFirstExtendedVariableLengthRecord), 8);
+		lasBin.write(reinterpret_cast<char*>(&m_headerExt4.numberOfExtendedVariableLengthRecords), 4);
+		lasBin.write(reinterpret_cast<char*>(&m_headerExt4.numberOfPointRecords), 8);
+		lasBin.write(reinterpret_cast<char*>(&m_headerExt4.numberOfPointsByReturn), 120);
 	}
-
 	
+	// Compare streampos after header write with header size value and correct if necessary
 	auto currentStreampos = lasBin.tellp();
 
 	if (static_cast<unsigned short>(currentStreampos) != m_header.headerSize)
@@ -126,8 +120,8 @@ void LASdataWriter::WriteLASheader(std::ofstream& lasBin)
 		m_header.headerSize = static_cast<unsigned short>(currentStreampos);
 		m_header.offsetToPointData = static_cast<unsigned long>(static_cast<long>(m_header.offsetToPointData) + diffHeaderSizes);
 
-		lasBin.write((char*)&m_header.headerSize, size_uint16);
-		lasBin.write((char*)&m_header.offsetToPointData, size_uint32);
+		lasBin.write(reinterpret_cast<char*>(&m_header.headerSize), size_uint16);
+		lasBin.write(reinterpret_cast<char*>(&m_header.offsetToPointData), size_uint32);
 		lasBin.seekp(currentStreampos, lasBin.beg);
 	}
 
@@ -137,10 +131,6 @@ void LASdataWriter::WriteLASheader(std::ofstream& lasBin)
 
 void LASdataWriter::WriteLASdata(std::ofstream& lasBin)
 {
-	// Check if datatype sizes are correct during compilation
-	static_assert(sizeof(float) == 4,			"Float should have a size of 8! But it is not on this machine!");
-	static_assert(sizeof(double) == 8,			"Double should have a size of 8! But it is not on this machine!");
-
 	// Initialilzations
 	int writeBufferPointSize = 4096;	// How many Points are written per write call
 	size_t pointOffset = 0;				// pointOffset is offset to the current cloud point to process
@@ -215,11 +205,6 @@ void LASdataWriter::WriteLASdata(std::ofstream& lasBin)
 	/* Data write loop */
 	for (size_t i = 0; i < (fullChunksCount + 1); ++i)
 	{
-		if ((i % fileCheckInterval == 0)) {
-
-			if (!lasBin.good()) { throw std::ofstream::failure("Error during file write! Stream went bad!"); }
-		}
-
 		// Current Position in point array
 		pointOffset = static_cast<size_t>(i) * writeBufferPointSize;
 
@@ -255,7 +240,7 @@ void LASdataWriter::WriteLASdata(std::ofstream& lasBin)
 			}
 			else 
 			{
-				std::memcpy(pBuffer + bufOffPointStart + scanAngle_Byte, &m_mxStructPointer.pScanAngle[pointOffset + k], size_signedchar);
+				std::memcpy(pBuffer + bufOffPointStart + scanAngle_Byte, &m_mxStructPointer.pScanAngle[pointOffset + k], size_int8);
 			}
 
 			std::memcpy(pBuffer + bufOffPointStart + pointSourceID_Byte, &m_mxStructPointer.pPointSourceID[pointOffset + k], size_uint16);
@@ -298,6 +283,8 @@ void LASdataWriter::WriteLASdata(std::ofstream& lasBin)
 		// Finally write buffer to file
 		lasBin.write(pBuffer, static_cast<std::streamsize>(writeBufferPointSize) * m_header.PointDataRecordLength);
 	}
+
+	if (lasBin.fail()) { throw std::ofstream::failure("Error during file write! Stream went bad!"); }
 }
 
 void LASdataWriter::GetHeader(const mxArray* prhs)
@@ -448,7 +435,7 @@ void LASdataWriter::GetData(const mxArray* prhs) {
 	}
 }
 
-void LASdataWriter::isDataValid()
+void LASdataWriter::isDataValid() const
 {
 	if (nullptr == m_mxStructPointer.pX) {
 		mexErrMsgIdAndTxt("MEX:LASWriter:isDataValid", "Pointer to X invalid!");

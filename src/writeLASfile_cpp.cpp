@@ -101,6 +101,11 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 			if (lasBin.is_open()) { lasBin.close(); }
 			mexErrMsgIdAndTxt("MEX:writeLASFile_mex:bad_alloc", ba.what());
 		}
+		catch (const std::ofstream::failure& ex)
+		{
+			if (lasBin.is_open()) { lasBin.close(); }
+			mexErrMsgIdAndTxt("MEX:writeLASFile_mex:OfstreamFailure", ex.what());
+		}
 		catch (const std::exception& ex) {
 			if (lasBin.is_open()) { lasBin.close(); }
 			mexErrMsgIdAndTxt("MEX:writeLASFile_mex:Exception", ex.what());

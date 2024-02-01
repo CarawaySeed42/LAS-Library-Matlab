@@ -102,7 +102,7 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 	char* filePath = mxArrayToString(prhs[0]);
 
 	std::ios_base::sync_with_stdio(false);
-	std::ifstream lasBin;	
+	std::ifstream lasBin;
 	lasBin.rdbuf()->pubsetbuf(0, 0);						
 	lasBin.open(filePath, std::ios::in | std::ios::binary);	// Open File
 	mxFree(filePath);										// Deallocate memory of path after opening file because it is not needed anymore
@@ -156,10 +156,6 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 			{
 				lasReader.ReadExtVLR(plhs[0], lasBin);
 			}
-			
-			// Close file if it was still open
-			if (lasBin.is_open()) { lasBin.close(); }
-
 		}
 		catch (const std::bad_alloc& ba) {
 			if (lasBin.is_open()) { lasBin.close(); }
@@ -177,5 +173,11 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 	else
 	{
 		mexErrMsgIdAndTxt("MEX:readLasFile:invalidArgumentException", "File could not be opened!");
+	}
+
+	// Close file
+	if (lasBin.is_open()) 
+	{ 
+		lasBin.close();
 	}
 };

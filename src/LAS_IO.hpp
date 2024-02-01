@@ -14,6 +14,29 @@
 // Ths is the header fíle for base class LAS_IO and derived classes LASDataReader and LASDataWriter
 // Info: private and protected methods start with lower case letter. Publc methods start with upper case letter.
 
+// Check if datatype sizes are LAS conform during compilation. 
+static_assert(sizeof(char) == 1, "Type Char should have a size of 1 byte! But is not on this machine!");
+static_assert(sizeof(unsigned char) == 1, "Type Unsigned Char should have a size of 1 byte! But is not on this machine!");
+static_assert(sizeof(unsigned short) == 2, "Type Unsigned Short should have a size of 2 bytes! But is not on this machine!");
+static_assert(sizeof(unsigned long) == 4, "Type Unsigned Long should have a size of 4 bytes! But is not on this machine!");
+static_assert(sizeof(unsigned long long) == 8, "Type Unsigned Long Long should have a size of 8 bytes! But is not on this machine!");
+static_assert(sizeof(long) == 4, "Type Long should have a size of 4 bytes! But is not on this machine!");
+static_assert(sizeof(float) == 4, "Type Float should have a size of 4 bytes! But is not on this machine!");
+static_assert(sizeof(double) == 8, "Type Double should have a size of 8 bytes! But is not on this machine!");
+
+static_assert(sizeof(uint8_t) == 1, "Type uint8_t should have a size of 1 byte! But is not on this machine!");
+static_assert(sizeof(uint16_t) == 2, "Type uint16_t should have a size of 2 bytes! But is not on this machine!");
+static_assert(sizeof(uint32_t) == 4, "Type uint32_t should have a size of 4 bytes! But is not on this machine!");
+static_assert(sizeof(uint64_t) == 8, "Type uint64_t should have a size of 8 bytes! But is not on this machine!");
+static_assert(sizeof(int8_t) == 1, "Type int8_t should have a size of 1 byte! But is not on this machine!");
+static_assert(sizeof(int16_t) == 2, "Type int16_t should have a size of 2 bytes! But is not on this machine!");
+static_assert(sizeof(int32_t) == 4, "Type int32_t should have a size of 4 bytes! But is not on this machine!");
+static_assert(sizeof(int64_t) == 8, "Type int64_t should have a size of 8 bytes! But is not on this machine!");
+
+// Compile Time Constants
+constexpr size_t RecordFormatCount = 11;
+
+
 class LAS_IO 
 {
 protected:
@@ -135,18 +158,18 @@ protected:
 	int m_internalPointDataRecordID	= -1;
 
 	// Constants and byte offsets
-	const std::vector<unsigned char> m_supported_record_formats	{ 0,   1,  2,  3,  4,  5,  6,  7,  8,  9, 10 };
-	const std::vector<unsigned char> m_record_lengths			{ 20, 28, 26, 34, 57, 63, 30, 36, 38, 59, 67 };
+	const std::array<unsigned char, RecordFormatCount> m_supported_record_formats	{ 0,   1,  2,  3,  4,  5,  6,  7,  8,  9, 10 };
+	const std::array<unsigned char, RecordFormatCount> m_record_lengths				{ 20, 28, 26, 34, 57, 63, 30, 36, 38, 59, 67 };
 
-	const std::vector<unsigned char> m_bits2_Byte			{  0,  0,  0,  0,  0,  0, 15, 15, 15, 15, 15 };	// Byte offset to second bit field
-	const std::vector<unsigned char> m_classification_Byte	{ 15, 15, 15, 15, 15, 15, 16, 16, 16, 16, 16 };	// Byte offset to classification
-	const std::vector<unsigned char> m_scanAngle_Byte		{ 16, 16, 16, 16, 16, 16, 18, 18, 18, 18, 18 };	// Byte offset to scan angle rank
-	const std::vector<unsigned char> m_userData_Byte		{ 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17 };	// Byte offset to user data
-	const std::vector<unsigned char> m_pointSourceID_Byte	{ 18, 18, 18, 18, 18, 18, 20, 20, 20, 20, 20 };	// Byte offset to point source id
-	const std::vector<unsigned char> m_time_Byte			{  0, 20,  0, 20, 20, 20, 22, 22, 22, 22, 22 };	// Byte offset to time
-	const std::vector<unsigned char> m_color_Byte			{  0,  0, 20, 28,  0, 28,  0, 30, 30, 30, 30 };	// Byte offset from point start to red color
-	const std::vector<unsigned char> m_NIR_Byte				{  0,  0,  0,  0,  0,  0,  0,  0, 36,  0, 36 };	// Byte offset to near infrared channel
-	const std::vector<unsigned char> m_wavePackets_Byte		{  0,  0,  0,  0, 28, 34,  0,  0,  0, 30, 38};	// Byte offset to wave packets
+	const std::array<unsigned char, RecordFormatCount> m_bits2_Byte					{  0,  0,  0,  0,  0,  0, 15, 15, 15, 15, 15 };	// Byte offset to second bit field
+	const std::array<unsigned char, RecordFormatCount> m_classification_Byte		{ 15, 15, 15, 15, 15, 15, 16, 16, 16, 16, 16 };	// Byte offset to classification
+	const std::array<unsigned char, RecordFormatCount> m_scanAngle_Byte				{ 16, 16, 16, 16, 16, 16, 18, 18, 18, 18, 18 };	// Byte offset to scan angle rank
+	const std::array<unsigned char, RecordFormatCount> m_userData_Byte				{ 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17 };	// Byte offset to user data
+	const std::array<unsigned char, RecordFormatCount> m_pointSourceID_Byte			{ 18, 18, 18, 18, 18, 18, 20, 20, 20, 20, 20 };	// Byte offset to point source id
+	const std::array<unsigned char, RecordFormatCount> m_time_Byte					{  0, 20,  0, 20, 20, 20, 22, 22, 22, 22, 22 };	// Byte offset to time
+	const std::array<unsigned char, RecordFormatCount> m_color_Byte					{  0,  0, 20, 28,  0, 28,  0, 30, 30, 30, 30 };	// Byte offset from point start to red color
+	const std::array<unsigned char, RecordFormatCount> m_NIR_Byte					{  0,  0,  0,  0,  0,  0,  0,  0, 36,  0, 36 };	// Byte offset to near infrared channel
+	const std::array<unsigned char, RecordFormatCount> m_wavePackets_Byte			{  0,  0,  0,  0, 28, 34,  0,  0,  0, 30, 38 };	// Byte offset to wave packets
 	
 	// Moves the stream position to the beginning of the variable length record header
 	void setStreamToVLRHeader(std::ifstream& lasBin);
@@ -299,7 +322,7 @@ private:
 	inline void copyMXCharToArray(char* pCharDestination, const mxChar* const pMXCharSource, size_t count);
 
 	// Are the Pointers to the neccessary Matlab data valid (Throws Matlab Error if not)
-	void isDataValid();
+	void isDataValid() const;
 
 	// Writes current stream position as offset to point data into LAS file
 	void setStreamPosAsDataOffset(std::ofstream& lasBin);

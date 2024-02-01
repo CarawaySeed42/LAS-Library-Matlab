@@ -91,8 +91,8 @@ void LASdataReader::ReadPointData(std::ifstream& lasBin)
 	const size_t bufferSize = static_cast<size_t>(m_header.PointDataRecordLength) * chunksize;		// Buffer size in bytes
 
 	// Data will be read in blocks. Determine Block count here
-	uint_fast64_t fullChunksCount = m_numberOfPointsToRead / (uint_fast64_t)chunksize;
-	int pointsLeftToRead = (int)(m_numberOfPointsToRead - ((uint_fast64_t)chunksize * fullChunksCount));
+	uint_fast64_t fullChunksCount = m_numberOfPointsToRead / static_cast<uint_fast64_t>(chunksize);
+	int pointsLeftToRead = (int)(m_numberOfPointsToRead - (static_cast<uint_fast64_t>(chunksize) * fullChunksCount));
 
 	/* Check for Point Data Format and start reading*/
 	// Create reading buffer
@@ -129,11 +129,11 @@ void LASdataReader::ReadPointData(std::ifstream& lasBin)
 				pBuffer += pointerShiftAfterIntensity;
 			}
 		}
-		lasBin.close();
 		return;
 	}
 
 	// If everything is consistent up to here then try to read according to point data format
+	// using switch case for 11 record formats. Not pretty but no branching in loop neccessary.
 	switch ((unsigned short)m_header.PointDataRecordFormat)
 	{
 	case 0:
