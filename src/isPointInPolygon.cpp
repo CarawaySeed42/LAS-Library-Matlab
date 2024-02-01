@@ -103,19 +103,19 @@ inline void Compute(mxArray* plhs[], const mxArray* prhs[], int nrhs, const T* _
 
 	// Set number if threads according to argument or available threads, depending on which is smaller
 	if (nrhs > 4) {
-		const int machine_num_threads	= std::thread::hardware_concurrency();
-		const int inputThreadNumber		= static_cast<int>(mxGetScalar(prhs[4]));
+		const int machine_num_threads = std::thread::hardware_concurrency();
+		const int inputThreadNumber = static_cast<int>(mxGetScalar(prhs[4]));
 
-		numberOfThreads					= inputThreadNumber   < machine_num_threads ? inputThreadNumber : machine_num_threads;
-		numberOfThreads					= numberOfThreads < 1 ? machine_num_threads : numberOfThreads;
+		numberOfThreads = inputThreadNumber < machine_num_threads ? inputThreadNumber : machine_num_threads;
+		numberOfThreads = numberOfThreads < 1 ? machine_num_threads : numberOfThreads;
 	}
 
 	if (nrhs > 5) {
 		algorithmInput = static_cast<int>(mxGetScalar(prhs[5]));
 	}
 
-	const size_t size_polyX		= mxGetNumberOfElements(prhs[0]);	// Number of Polygon X - Coordinates
-	const size_t size_pointsX	= mxGetNumberOfElements(prhs[2]);	// Number of Point Data X - Coordinates
+	const size_t size_polyX = mxGetNumberOfElements(prhs[0]);	// Number of Polygon X - Coordinates
+	const size_t size_pointsX = mxGetNumberOfElements(prhs[2]);	// Number of Point Data X - Coordinates
 
 	// Check for nullptr
 	if (polyX == nullptr || polyY == nullptr || pointsX == nullptr || pointsY == nullptr) {
@@ -128,25 +128,30 @@ inline void Compute(mxArray* plhs[], const mxArray* prhs[], int nrhs, const T* _
 	mxLogical* result = mxGetLogicals(plhs[0]);
 
 	/*Run Point in Poly algorithm*/
+	// Every thread gets a chunk of 2% of points to process and dynamically switch to next when chunk is finished
 	const int threadChunksize = numberOfThreads > 1 ? static_cast<int>((size_pointsX / (numberOfThreads * 50)) + 1) : static_cast<int>(size_pointsX);
 	omp_set_num_threads(numberOfThreads);
 
-	if (algorithmInput == WindingNumberIncludeEdges)
+	switch (algorithmInput)
 	{
+	case searchAlgorithm::WindingNumberIncludeEdges:
+
 #pragma omp parallel for schedule(dynamic, threadChunksize) default(shared) if (size_pointsX > 10000 || size_polyX > 150)
 		for (int i = 0; i < size_pointsX; ++i) {
 			result[i] = windingNumberIncludeEdges(polyX, polyY, pointsX[i], pointsY[i], size_polyX);
 		}
-	}
-	else if (algorithmInput == Raycast)
-	{
+		break;
+
+	case searchAlgorithm::Raycast:
+
 #pragma omp parallel for schedule(dynamic, threadChunksize) default(shared) if (size_pointsX > 10000 || size_polyX > 150)
 		for (int i = 0; i < size_pointsX; ++i) {
 			result[i] = raycast(polyX, polyY, pointsX[i], pointsY[i], size_polyX);
 		}
-	}
-	else
-	{
+		break;
+
+	default:
+
 #pragma omp parallel for schedule(dynamic, threadChunksize) default(shared) if (size_pointsX > 10000 || size_polyX > 150)
 		for (int i = 0; i < size_pointsX; ++i) {
 			result[i] = windingNumber(polyX, polyY, pointsX[i], pointsY[i], size_polyX);
