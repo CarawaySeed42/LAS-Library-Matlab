@@ -28,7 +28,7 @@ function isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads,
 % Returns:      isInside [nx1 bool] :	true if point is inside,
 %                                       false if point is outside poylgon
 %			
-% This file uses the extension .mexw64.
+% This called mex file uses the extension .mexw64.
 % Originally built in Matlab 2019b with MSVC 2019
 %
 % Source:		 isPointInPolygon.cpp

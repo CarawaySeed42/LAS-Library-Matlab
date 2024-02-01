@@ -1,7 +1,7 @@
 % This script compiles the isPointInPolygon mex file
-% Can be compiled with Microsoft Visual C++ 2019 (and likely newer)
-% and latest MinGW-w64 Compiler. Tested on Windows 10 x64 platform!
-% C++11 is minimum requirement! 
+% Can be compiled with Microsoft Visual C++ 2017 (and likely newer)
+% and latest MinGW-w64 Compiler Collection. 
+% Tested on Windows 10 x64 platform! C++11 is minimum requirement! 
 % If you use MinGW then you have to link the OpenMP library. See settings!
 % For available compilers enter the folling into the matlab command window:
 %   mex -setup cpp
@@ -13,7 +13,7 @@
 %       debug     : Set true if debug version should be compiled
 %       UseInterleavedComplexAPI: Set true to compile with Interleaved Complex API
 %       verbose            : Set true to show verbose compilation log
-%       parallel_computing : Set OpenMP compiler flag for parfor?
+%       parallel_computing : Set OpenMP compiler flag for multithreading
 %
 %       minGW_openMP_link  : Path to MinGW OpenMP lib on your PC 
 %
@@ -55,7 +55,7 @@ if UseInterleavedComplexAPI
 end
 
 % check compiler options for set compiler
-CPPcompiler = mex.getCompilerConfigurations('C++','Selected');
+CPPcompiler     = mex.getCompilerConfigurations('C++','Selected');
 compilerIsMinGW = strfind(lower(CPPcompiler.ShortName), lower('MinGW'));
 if isempty(compilerIsMinGW)
     minGW_openMP_link = '';
