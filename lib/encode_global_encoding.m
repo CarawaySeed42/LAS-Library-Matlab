@@ -24,23 +24,11 @@ if ~isa(globalEncoding, 'GlobalEncoding')
 end
 
 if globalEncoding.waveform_data_packets_internal && globalEncoding.waveform_data_packets_external
-    error('Waveform Data packets internal and external are mutually exclusive!')
+    warning('Waveform Data packets internal and external are mutually exclusive!')
 end
 
-%% las.header.global_encoding = uint16(0);
-encoded_data = uint16(0);
-
-encoded_data = bitor(encoded_data, bitand(globalEncoding.wkt, 1), 'uint16');
-encoded_data  = bitshift(encoded_data, 1, 'uint16');  
-encoded_data = bitor(encoded_data, bitand(globalEncoding.synthetic_return_numbers, 1), 'uint16');
-encoded_data  = bitshift(encoded_data, 1, 'uint16'); 
-encoded_data = bitor(encoded_data, bitand(globalEncoding.waveform_data_packets_external, 1), 'uint16');
-encoded_data  = bitshift(encoded_data, 1, 'uint16');  
-encoded_data = bitor(encoded_data, bitand(globalEncoding.waveform_data_packets_internal, 1), 'uint16');
-encoded_data  = bitshift(encoded_data, 1, 'uint16');  
-encoded_data = bitor(encoded_data, bitand(globalEncoding.gps_time_type, 1), 'uint16'); 
-
-las.header.global_encoding = encoded_data;
+encoded_data                = globalEncoding.Encode();
+las.header.global_encoding  = encoded_data;
 
 %%
 end
