@@ -114,8 +114,9 @@ inline void Compute(mxArray* plhs[], const mxArray* prhs[], int nrhs, const T* _
 		algorithmInput = static_cast<int>(mxGetScalar(prhs[5]));
 	}
 
-	const size_t size_polyX = mxGetNumberOfElements(prhs[0]);	// Number of Polygon X - Coordinates
-	const size_t size_pointsX = mxGetNumberOfElements(prhs[2]);	// Number of Point Data X - Coordinates
+	// Use int for sizes because of openMP. Overflow would have been caught in parent function
+	const int size_polyX = static_cast<int>(mxGetNumberOfElements(prhs[0]));	// Number of Polygon X - Coordinates
+	const int size_pointsX = static_cast<int>(mxGetNumberOfElements(prhs[2]));	// Number of Point Data X - Coordinates
 
 	// Check for nullptr
 	if (polyX == nullptr || polyY == nullptr || pointsX == nullptr || pointsY == nullptr) {
@@ -194,7 +195,7 @@ inline bool windingNumber(const T* __restrict polyX, const T* __restrict polyY, 
 			if (pointY < polyY[i]) {
 				if (isLeft(polyX[j], polyY[j], polyX[i], polyY[i], pointX, pointY) > 0)
 				{
-					// If point on the right then increase winding number
+					// If point on the left then increase winding number
 					++winding_num;
 				}
 			}
@@ -247,7 +248,7 @@ inline bool windingNumberIncludeEdges(const T* __restrict polyX, const T* __rest
 			if (pointY < polyY[i]) {
 				if (sideOfLine > 0)
 				{
-					// If point on the right then increase winding number
+					// If point on the left then increase winding number
 					++winding_num;
 				}
 			}

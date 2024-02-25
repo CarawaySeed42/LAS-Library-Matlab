@@ -20,55 +20,40 @@
 % Advice: According to my testing MSVC should be preferred to MinGW.
 %% ------------------------------------------------------------------------
 % User Input
-outdir = '../lib/mex';
-debug = false;
-UseInterleavedComplexAPI = false;
-verbose = false;
-parallel_computing = true;
+outdir                   = '../lib/mex';
+debug                    = false;
+verbose                  = false;
+UseInterleavedComplexAPI = true;
+parallel_computing       = true;
+useAddCompilerFlags      = false;
+add_compiler_flags       = '-std=c++17';
 
 minGW_openMP_link = 'C:\mingw64\lib\gcc\x86_64-w64-mingw32\12.2.0\libgomp.a';
 
 %% -----------------------------------------------------------------------
 fprintf('-------------------------------------------------------------\n');
+
 % Name of the output file
 outputname = 'isPointInPolygon_cpp';
 
+% The compiler flags
+flags = {};
+
 % Translate user settings to compiler options
-debugFlag = '';
-if debug
-    debugFlag = '-g';
-end
-
-verboseFlag = '';
-if verbose
-    verboseFlag = '-v';
-end
-
-interleaveOpts = '';
-if UseInterleavedComplexAPI
-    if ~verLessThan('matlab','9.4')
-        interleaveOpts = '-R2018a';
-    else
-        disp(['Compiling without Interleaved Complex API due to ',...
-              'Matlab Version being older than 9.4']);
-    end
-end
-
 % check compiler options for set compiler
 CPPcompiler     = mex.getCompilerConfigurations('C++','Selected');
 compilerIsMinGW = strfind(lower(CPPcompiler.ShortName), lower('MinGW'));
-if isempty(compilerIsMinGW)
-    minGW_openMP_link = '';
+if ~isempty(compilerIsMinGW)
+    flags = cat(2, flags, minGW_openMP_link);
 end
 
-CFLAGS = '';
 if parallel_computing
     if ispc
         % Flag to run on Windows platform
-        CFLAGS = 'COMPFLAGS="$COMPFLAGS /openmp"';
+        flags = cat(2, flags, 'COMPFLAGS="$COMPFLAGS /openmp"');
     elseif isunix
         % Flag to run on Linux platform
-        CFLAGS='''$CFLAGS -fopenmp'' -LDFLAGS=''$LDFLAGS -fopenmp''';
+        flags = cat(2, flags, '''$CFLAGS -fopenmp'' -LDFLAGS=''$LDFLAGS -fopenmp''');
     elseif ismac
         % Flag to run on Mac platform
         fprintf(1,'Mac platform not supported for parallel processing!');
@@ -77,12 +62,38 @@ if parallel_computing
     end
 end
 
-% Print chosen options
-fprintf(1, 'Compiler Input: %s\n', [minGW_openMP_link, ' ',interleaveOpts, ' ', verboseFlag, ' ', debugFlag, ' ', CFLAGS, ' ', ...
-           'isPointInPolygon.cpp', ' ',' -outdir ',  outdir, ' -output ', outputname]);
+% Set interleaved complex
+if UseInterleavedComplexAPI
+    if ~verLessThan('matlab','9.4')
+        flags = cat(2, flags, '-R2018a');
+    else
+        disp(['Compiling without Interleaved Complex API due to ',...
+              'Matlab Version being older than 9.4']);
+    end
+end
+
+if debug
+    flags = cat(2, flags, '-g');
+end
+
+if verbose
+    flags = cat(2, flags, '-v');
+end
+
+if useAddCompilerFlags
+    flags = cat(2, flags, ['CXXFLAGS=$CXXFLAGS ' add_compiler_flags]);
+end
+
+% Add source files and output
+flags = cat(2, flags, 'isPointInPolygon.cpp',...
+            '-outdir',  outdir, '-output', outputname);
+
+% Print chosen options (string joining was introduced with Matlab 2013b)
+fprintf(1, 'Compiler Input: ');
+fprintf('%s ', flags{:});
+fprintf('\n');
 
 % Compile File
-mex(minGW_openMP_link, interleaveOpts, verboseFlag, debugFlag, CFLAGS, 'isPointInPolygon.cpp',...
-    '-outdir', outdir, '-output', outputname)
+mex(flags{:})
 
 fprintf('-------------------------------------------------------------\n');
