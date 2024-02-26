@@ -19,7 +19,7 @@
 
 #endif
 
-void LAS_IO::setStreamToVLRHeader(std::ifstream& lasBin)
+void LAS_IO::setStreamToVLRHeader(std::ifstream& lasBin) const
 {
 	// If end of file was reached during reading then clear bits to allow further reading and seeking for small files
 	if (lasBin.eof()) {
@@ -28,7 +28,7 @@ void LAS_IO::setStreamToVLRHeader(std::ifstream& lasBin)
 	lasBin.seekg(m_header.headerSize, lasBin.beg);
 }
 
-void LAS_IO::setStreamToExtVLRHeader(std::ifstream& lasBin)
+void LAS_IO::setStreamToExtVLRHeader(std::ifstream& lasBin) const
 {
 	// If end of file was reached during reading then clear bits to allow further reading and seeking for small files
 	if (lasBin.eof()) {
@@ -37,11 +37,13 @@ void LAS_IO::setStreamToExtVLRHeader(std::ifstream& lasBin)
 	lasBin.seekg(m_headerExt4.startOfFirstExtendedVariableLengthRecord, lasBin.beg);
 }
 
-bool LAS_IO::HasVLR() {
+bool LAS_IO::HasVLR() const {
+
 	return m_header.numberOfVariableLengthRecords > 0;
 }
 
-bool LAS_IO::HasExtVLR() {
+bool LAS_IO::HasExtVLR()  const 
+{
 	return m_headerExt4.numberOfExtendedVariableLengthRecords > 0;
 }
 

@@ -133,7 +133,7 @@ void LASdataReader::ReadPointData(std::ifstream& lasBin)
 	}
 
 	// If everything is consistent up to here then try to read according to point data format
-	// using switch case for 11 record formats. Not pretty but no branching in loop neccessary.
+	// using switch case for 11 record formats. Not pretty but no additional branching in loop neccessary.
 	switch ((unsigned short)m_header.PointDataRecordFormat)
 	{
 	case 0:
@@ -412,10 +412,9 @@ void LASdataReader::ReadPointData(std::ifstream& lasBin)
 	}
 	default:
 	{
-		lasBin.close();
 		char buffer[100];
 		sprintf(buffer, "Point Data Format %d not supported!", m_header.PointDataRecordFormat);
-		mexErrMsgIdAndTxt("MEX:ReadPointData::InvalidFormat", buffer);
+		mexErrMsgIdAndTxt("MEX:ReadPointData::invalidformat", buffer);
 
 	}
 	}
@@ -436,34 +435,34 @@ bool LASdataReader::CheckHeaderConsistency(std::ifstream& lasBin)
 	char lasf[] = "LASF";
 	if (strcmp(m_header.fileSignature, lasf) != 0)
 	{
-		mexErrMsgIdAndTxt("MEX:CheckHeaderConsistency:InvalidHeader", "File Signature of provided file is not LASF. This function is only to be used on LAS-Files containing LIDAR data!");
+		mexErrMsgIdAndTxt("MEX:CheckHeaderConsistency:invalidheader", "File Signature of provided file is not LASF. This function is only to be used on LAS-Files containing LIDAR data!");
 	}
 
 	if (m_header.versionMinor > 4)
 	{
-		lasBin.close(); mexWarnMsgIdAndTxt("MEX:checkHeaderConsistency:NotImplemented", "Version Minor bigger than 4 not actively supported!\n");
+		mexWarnMsgIdAndTxt("MEX:checkHeaderConsistency:notimplemented", "Version Minor bigger than 4 not actively supported!\n");
 	}
 
 	if (m_header.offsetToPointData < m_header.headerSize) {
-		lasBin.close(); mexWarnMsgIdAndTxt("MEX:checkHeaderConsistency:InvalidHeader", "Critical Error: Offset to Point Data is smaller than header size!\n"); 
+		mexWarnMsgIdAndTxt("MEX:checkHeaderConsistency:invalidheader", "Critical Error: Offset to Point Data is smaller than header size!\n"); 
 		isHeaderGood = false;
 	}
 
 	if (m_header.PointDataRecordFormat > 10)
 	{
 		m_XYZIntOnly = true;
-		mexWarnMsgIdAndTxt("MEX:CheckHeaderConsistency:NotImplemented", "Point Data Format bigger than 10 is not officialy supported!\n\t\t Reading coordinates and intensities only! This might fail!");
+		mexWarnMsgIdAndTxt("MEX:CheckHeaderConsistency:notimplemented", "Point Data Format bigger than 10 is not officialy supported!\n\t\t Reading coordinates and intensities only! This might fail!");
 	}
 
 	if (m_header.PointDataRecordFormat > 127)
 	{
-		mexWarnMsgIdAndTxt("MEX:readLasFile:CheckHeaderConsistency:NotImplemented", "File is LAZ (LASZip) File and is not supported by this function!"); 
+		mexWarnMsgIdAndTxt("MEX:readLasFile:CheckHeaderConsistency:notimplemented", "File is LAZ (LASZip) File and is not supported by this function!"); 
 		isHeaderGood = false;
 	}
 
 	if (m_header.versionMajor != 1)
 	{
-		lasBin.close(); mexWarnMsgIdAndTxt("MEX:CheckHeaderConsistency:InvalidHeader", "Version Major other than 1 is not supported!\n"); 
+		mexWarnMsgIdAndTxt("MEX:CheckHeaderConsistency:invalidheader", "Version Major other than 1 is not supported!\n"); 
 		isHeaderGood = false;
 	}
 
@@ -473,12 +472,12 @@ bool LASdataReader::CheckHeaderConsistency(std::ifstream& lasBin)
 		if (m_header.PointDataRecordLength < m_minAllowedRecordLength) {
 			char buffer[100];
 			sprintf_s(buffer, "PointDataRecordLength is smaller than %d! LAS Reading will be cancelled!", m_minAllowedRecordLength);
-			mexWarnMsgIdAndTxt("MEX:CheckHeaderConsistency:InvalidHeader", buffer); 
+			mexWarnMsgIdAndTxt("MEX:CheckHeaderConsistency:invalidheader", buffer); 
 			isHeaderGood = false;
 		}
 	}
 	else {
-		mexWarnMsgIdAndTxt("MEX:CheckHeaderConsistency:NotImplemented", "PointDataRecordFormat is unknown! Reading coordinates and intensities only! This might fail!");
+		mexWarnMsgIdAndTxt("MEX:CheckHeaderConsistency:notimplemented", "PointDataRecordFormat is unknown! Reading coordinates and intensities only! This might fail!");
 		m_XYZIntOnly = true;
 	}
 
@@ -491,12 +490,12 @@ bool LASdataReader::CheckHeaderConsistency(std::ifstream& lasBin)
 
 	// If the m_numberOfPointsToRead is bigger than the practically possible point count, then abort because header and file contents are definitely inconsistent
 	if ((availableBytes / ((uint_fast64_t)m_header.PointDataRecordLength)) < m_numberOfPointsToRead) {
-		mexWarnMsgIdAndTxt("MEX:CheckHeaderConsistency:InvalidHeader", "According to header the file contains more Points than the filesize allows!\n");
+		mexWarnMsgIdAndTxt("MEX:CheckHeaderConsistency:invalidheader", "According to header the file contains more Points than the filesize allows!\n");
 		isHeaderGood = false;
 	}
 
 	if (m_numberOfPointsToRead < 1) {
-		mexWarnMsgIdAndTxt("MEX:CheckHeaderConsistency:InvalidHeader", "Number of Point Records from Offset is zero according to parsed header. File apparently has no points!\n");
+		mexWarnMsgIdAndTxt("MEX:CheckHeaderConsistency:invalidheader", "Number of Point Records from Offset is zero according to parsed header. File apparently has no points!\n");
 		isHeaderGood = false;
 	}
 

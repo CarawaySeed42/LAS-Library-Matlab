@@ -1,50 +1,12 @@
 /*%==========================================================
-% function lasStruct = readLasFile(lasFilePath)
-% or       lasStruct = readLasFile(lasFilePath, optsString)
-%
-% Supports Versions LAS 1.1 - 1.4
-% Supports Point Data Record Format 0 to 10. Partially supports other PDRF.
-%
-% Reads LAS-File data with the help of a C++ Mex-File into a lasdata style
-% struct. The resulting struct has the similar layout as the lasdata fields
-% with some exceptions. E.g. The creation day of year is not a struct anymore.
-% Extended Variable Length Records' size after header keeps the same
-% field name as the field for the not extended VLRs, ...
-%
-% For info on lasdata see the matlab class lasdata by Teemu Kumpumäki
-%
-% Some informations still have to be decoded (like extra bytes)
-% which is not the purpose of this reader. So they are read but not decoded
-%
-% Input:        lasFilePath [char array]:	Full Path to LAS-File
-% (optional)    optsString  [char array]:   Optional input option string
-%
-% optsString:   'LoadOnlyHeader' - Fill header struct only
-%               'VLR'			 - Get header and variable length records
-%                                  Does not include extended VLRs
-%               'XYZInt'         - Loads header, VLR, X, Y, Z and intensities
-%               'LoadAll'        - Loads all of the point data
-%                                  (same as with only one given input)
-%
-% Output:       lasStruct [struct]:         lasdata style struct
-%
-%
-% This function uses the extension .mexw64.
-% Originally built in Matlab 2019b with Microsoft Visual C++ 2019
-%
-% Source: readLasFile.cpp LAS_IO.cpp LasReader.cpp
-%         VariableLengthRecords.cpp  LASAlloc.cpp
-% To rebuild this function run the provided script 'build_readLasFile.m'
+% writeLASfile_cpp.cpp
 %
 % Copyright (c) 2022, Patrick Kümmerle
 % Licence: see the included file
 %
 %========================================================*/
-
-
 #include "mex.h"
 #include <fstream>
-#include <cstring>
 #include "LAS_IO.hpp"
 
 
@@ -98,30 +60,14 @@ void mexFunction(int nlhs, mxArray* plhs[], int nrhs, const mxArray* prhs[]) {
 			lasBin.close();
 		}
 		catch (const std::bad_alloc& ba) {
-			if (lasBin.is_open()) { lasBin.close(); }
 			mexErrMsgIdAndTxt("MEX:writeLASFile_mex:bad_alloc", ba.what());
 		}
-		catch (const std::ofstream::failure& ex)
-		{
-			if (lasBin.is_open()) { lasBin.close(); }
-			mexErrMsgIdAndTxt("MEX:writeLASFile_mex:OfstreamFailure", ex.what());
-		}
-		catch (const std::exception& ex) {
-			if (lasBin.is_open()) { lasBin.close(); }
-			mexErrMsgIdAndTxt("MEX:writeLASFile_mex:Exception", ex.what());
-		}
-		catch (...) {
-			if (lasBin.is_open()) { lasBin.close(); }
-			mexErrMsgIdAndTxt("MEX:writeLASFile_mex:unhandledException", "Unhandled Exception occured");
+		catch (const std::ofstream::failure(&of)) {
+			mexErrMsgIdAndTxt("MEX:writeLASFile_mex:ofstreamfailure", of.what());
 		}
 	}
 	else
 	{
 		mexErrMsgIdAndTxt("MEX:writeLASFile_mex:invalidArgumentException", "File could not be opened for writing");
 	}
-
-	if (lasBin.is_open()) {
-		lasBin.close();
-	}
-
 };

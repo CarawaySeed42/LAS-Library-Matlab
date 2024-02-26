@@ -112,7 +112,7 @@ void LASdataWriter::WriteLASheader(std::ofstream& lasBin)
 
 	if (static_cast<unsigned short>(currentStreampos) != m_header.headerSize)
 	{
-		mexWarnMsgIdAndTxt("MEX:WriteLASheader:invalid_streampos", "Streamposition after writing the header diverges from the reference!\n Error will be corrected!");
+		mexWarnMsgIdAndTxt("MEX:WriteLASheader:invalidstreampos", "Streamposition after writing the header diverges from the reference!\n Error will be corrected!");
 		lasBin.seekp(94, lasBin.beg);
 
 		// Correct header size and offset to point data because it will be shifted as well
@@ -144,7 +144,7 @@ void LASdataWriter::WriteLASdata(std::ofstream& lasBin)
 
 	if (m_internalPointDataRecordID == -1) 
 	{
-		mexWarnMsgIdAndTxt("MEX:WriteLASdata:InvalidPointDataRecordFormat", "Critical Error: Point Data Record Format not supported!\n");
+		mexWarnMsgIdAndTxt("MEX:WriteLASdata:invalidPointDataRecordFormat", "Critical Error: Point Data Record Format not supported!\n");
 		return;
 	}
 
@@ -296,7 +296,7 @@ void LASdataWriter::GetHeader(const mxArray* prhs)
 	m_mxStructPointer.pMXheader = pMxHeader;
 
 	if (nullptr == pMxHeader) {
-		mexErrMsgIdAndTxt("MEX:GetHeader:Nullptr", "Could not access header field of LAS structure!");
+		mexErrMsgIdAndTxt("MEX:GetHeader:nullptr", "Could not access header field of LAS structure!");
 	}
 
 	m_header.sourceID		  = static_cast<unsigned short>(*GetDoubles(mxGetField(pMxHeader, 0, "source_id")));

@@ -21,7 +21,7 @@
 %       compiler_flags     : Additional compiler flags
 %       useAddCompilerFlags : Set true to use the set compiler_flags
 %
-% Compilation example:
+% Compilation example if all files in same folder:
 % mex -R2018a writeLASfile_cpp.cpp LASWriter.cpp
 % VariableLengthRecords.cpp -outdir ../lib/mex
 %

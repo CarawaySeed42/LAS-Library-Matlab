@@ -6,7 +6,9 @@ function isInside = isPointInPolygon(polyX, polyY, pointsX, pointsY, numThreads,
 %
 % Different algorithms can be chosen. Standard is the winding number
 % algorithm. Points on the border do not count as inside but there is an
-% option to treat points on the border as inside (see Input)
+% option to treat points on the border as inside (see Input). Said option 1
+% is meant for cases when polygon points and a subset of points are exactly
+% equal!
 %
 % Supports multithreading that kicks in if more than 1e4 points or more
 % than 150 polygon vertices are to be processed. The function has to be
@@ -52,13 +54,13 @@ if nargin < 6
 end
 
 % If input is neither fully double or single then cast to double
-isNotFloatingPoint = ...
-    ~(all([isa(polyX, 'double'), isa(polyY, 'double'),...
-           isa(pointsX, 'double'), isa(pointsY, 'double')]) |...
+isFloatingPoint = ...
+    (all([isa(polyX, 'double'), isa(polyY, 'double'),...
+           isa(pointsX, 'double'), isa(pointsY, 'double')]) ||...
       all([isa(polyX, 'single'), isa(polyY, 'single'),...
            isa(pointsX, 'single'), isa(pointsY, 'single')]));
        
-if isNotFloatingPoint
+if ~isFloatingPoint
     polyX   = double(polyX);
     polyY   = double(polyY);
     pointsX = double(pointsX);

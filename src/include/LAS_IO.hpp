@@ -6,10 +6,8 @@
 #define LAS_IO_H
 
 #include "mex.h"
-#include <algorithm>
 #include <array>
 #include <fstream>
-#include <vector>
 
 // Ths is the header fíle for base class LAS_IO and derived classes LASDataReader and LASDataWriter
 // Info: private and protected methods start with lower case letter. Publc methods start with upper case letter.
@@ -172,10 +170,10 @@ protected:
 	const std::array<unsigned char, RecordFormatCount> m_wavePackets_Byte			{  0,  0,  0,  0, 28, 34,  0,  0,  0, 30, 38 };	// Byte offset to wave packets
 	
 	// Moves the stream position to the beginning of the variable length record header
-	void setStreamToVLRHeader(std::ifstream& lasBin);
+	void setStreamToVLRHeader(std::ifstream& lasBin)  const;
 
 	// Moves the stream position to the beginning of the extended variable length record header
-	void setStreamToExtVLRHeader(std::ifstream& lasBin);
+	void setStreamToExtVLRHeader(std::ifstream& lasBin)  const;
 
 	// Assign the PDRF to an index to retrieve byte offsets for all fields
 	inline void setInternalRecordFormatID();
@@ -188,13 +186,13 @@ public:
 	/// Returns true if LAS-File has variable length records and false if not
 	/// </summary>
 	/// <returns>hasVLR: Does the LAS-File have VLR?</returns>
-	bool HasVLR();
+	bool HasVLR()  const;
 
 	/// <summary>
 	/// Returns true if LAS-File has extended variable length records and false if not
 	/// </summary>
 	/// <returns>hasVLR: Does the LAS-File have ExtVLR?</returns>
-	bool HasExtVLR();
+	bool HasExtVLR()  const;
 
 };
 
