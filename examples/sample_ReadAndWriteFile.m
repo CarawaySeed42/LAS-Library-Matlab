@@ -1,6 +1,8 @@
 %% sample_ReadAndWriteFile
 % This is a sample script to demonstrate how to read a LAS-File and then
-% write it as a different point data format
+% write it as a different point data format. A warning should appear
+% saying, that the padding of gps time was necessary, because it was not
+% contained in the data
 fprintf('-------------------------------------------------------------\n');
 fprintf('\nRun: sample_ReadAndWriteFile\n');
 
@@ -24,7 +26,7 @@ pcloud.y = pcloud.y + 420696;
 pcloud.z = pcloud.z - 69;
 
 % Update the header offsets because in this case, we  moved the cloud too
-% far from the old offset to represent this number with the former offset
+% far from the old offset to represent this number with the previous offset
 roundingValue = 10;
 pcloud = updateOffsets(pcloud, roundingValue);
 
@@ -40,7 +42,7 @@ outPath = fullfile(targetDir, 'sample_write.las');
 % Because the source was PDRF 0, the GPS-Time will be set to zero for all
 % points
 fprintf('     Writing File: %s\n', outPath);
-writeLASfile(pcloud, outPath, 1, 3, 0);
+writeLASfile(pcloud, outPath, 1, 3, 1);
 
 %% Read new LAS-File again to check the results
 pcloud_new = readLASfile(outPath);
