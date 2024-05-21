@@ -32,11 +32,10 @@ function las = writeLASfile(las, filename, majorversion, minorversion, pointform
 %       las [struct]        : Struct containing the written cloud data
 %
 
-MException = []; % Empty Matlab Exception
-LASContainsColor     = [2,3,5,7,8,9,10];
-LASContainsTime      = [1,3:10];
-LASContainsNIR       = [8,10];
-LASContainsWavePackets = [4, 5, 9, 10];
+LASContainsColor       = PCloudFun.LASContainsColor;
+LASContainsTime        = PCloudFun.LASContainsTime;
+LASContainsNIR         = PCloudFun.LASContainsNIR;
+LASContainsWavePackets = PCloudFun.LASContainsWavePackets;
 inputIsLegacyLasdata = 0;
 
 keepCreationDate = 0;
@@ -65,7 +64,7 @@ end
 
 % Create output directory if doesn't exist (isdir for backwards comp)
 [pathtmp,filenametmp,ext]=fileparts(filename);
-if ~isdir(pathtmp)
+if ~isdir(pathtmp) %#ok
     mkdir(pathtmp);
 end
 if ~strcmp(ext,'.las')
@@ -298,9 +297,9 @@ function dateStruct = GetCreationDate()
 %       date [struct]:
 %           day_of_year : Current day of year
 %           year        : Current year
-date_now=datestr(now,26);
-dateStruct.day_of_year     =  day(datetime(now,'ConvertFrom','datenum'),'dayofyear');        
-dateStruct.year   =  str2double(date_now(1:4));
+date_now                  = datetime(now,'ConvertFrom','datenum');
+dateStruct.day_of_year    =  day(date_now,'dayofyear');
+dateStruct.year           =  date_now.Year;
 end
 
 function lasHeader = PrepareHeader(las, keepCreationDate)
@@ -503,8 +502,16 @@ end
 end
 
 function las = checkHeaderFieldTypes(las)
-
-% Check header
+% las = checkHeaderFieldTypes(las)
+%
+% Checks if all header fields of las structure is of type double. If not it
+% is casted to double. Returns las structure with valid header
+%
+%   Arguments:
+%       las [struct]  : LAS Point Cloud structure
+%
+%   Returns:
+%       las [struct]  : LAS Point Cloud structure
 headerFields = fieldnames(las.header);
 for k=1:numel(headerFields)
     if( isnumeric(las.header.(headerFields{k})) )
@@ -517,6 +524,17 @@ end
 end
 
 function las = checkVariableRecords(las)
+% las = checkVariableRecords(las)
+%
+% Checks (Extended) Variable Length Records in LAS structure for validity
+% and does error correction. Fixes datatypes and record lengths in header 
+% regarding VLRs and sets start of waveform data if present
+%
+%   Arguments:
+%       las [struct]  : LAS Point Cloud structure
+%
+%   Returns:
+%       las [struct]  : LAS Point Cloud structure
 
 if ~isempty(las.variablerecords)
     for i = 1:length(las.variablerecords)
@@ -610,6 +628,18 @@ end
 end
 
 function stringOutput = zeroTerminateString(stringInput, strlength)
+% stringOutput = zeroTerminateString(stringInput, strlength)
+% 
+% Turns input into a zero terminated char array of a specified length
+%
+%   Arguments:
+%       stringInput [1xn char] : character array to terminate
+%       strlength [numeric]    : output array length
+%
+%   Returns:
+%       stringOutput [1xn char]: zero terminated char array of length
+%                                strlength
+%
 terminatedArray = zeros(1,strlength+1, 'uint8');
 char_array_length = min([length(stringInput), strlength]);
 terminatedArray(1:char_array_length) = uint8(stringInput(1:char_array_length));
@@ -617,12 +647,40 @@ stringOutput = char(terminatedArray);
 end
 
 function zeroPaddedField = ZeroPadField(structure, count, fieldname, datatype)
+% zeroPaddedField = ZeroPadField(structure, count, fieldname, datatype)
+% 
+% Pads the field of a structure with zeros and returns it as array of size
+% count with type datatype. If count is smaller than field size, then the
+% field is reduced to size of count
+%
+%   Arguments:
+%       structure [struct]     : input structure
+%       count [numeric]        : target size of field
+%       fieldname [1xn char]   : name of field to pad in structure
+%       datatype [1xn char]    : desired datatype of padded field
+%
+%   Returns:
+%       zeroPaddedField [nx1]  : zero padded field of type datatype
+%
 paddingArray = zeros(count,1,datatype);
 paddingArray(1:length(structure.(fieldname))) = structure.(fieldname);
 zeroPaddedField = paddingArray;
 end
 
 function lasField = FixDataType(lasField, datatype)
+% lasField = FixDataType(lasField, datatype)
+% 
+% Casts the contents of lasField to type of datatype, if it was not of the
+% type before. Used to fix the datatype of a LAS field if input is of
+% incorrect type
+%
+%   Arguments:
+%       lasField [nx1]         : input array
+%       datatype [1xn char]    : desired target datatype
+%
+%   Returns:
+%       lasField [nx1]         : array of type datatype
+%
 if ~isa(lasField, datatype)
     lasField = cast(lasField, datatype);
 end
