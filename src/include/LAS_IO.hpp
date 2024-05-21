@@ -165,7 +165,7 @@ protected:
 	const std::array<unsigned char, RecordFormatCount> m_userData_Byte				{ 17, 17, 17, 17, 17, 17, 17, 17, 17, 17, 17 };	// Byte offset to user data
 	const std::array<unsigned char, RecordFormatCount> m_pointSourceID_Byte			{ 18, 18, 18, 18, 18, 18, 20, 20, 20, 20, 20 };	// Byte offset to point source id
 	const std::array<unsigned char, RecordFormatCount> m_time_Byte					{  0, 20,  0, 20, 20, 20, 22, 22, 22, 22, 22 };	// Byte offset to time
-	const std::array<unsigned char, RecordFormatCount> m_color_Byte					{  0,  0, 20, 28,  0, 28,  0, 30, 30, 30, 30 };	// Byte offset from point start to red color
+	const std::array<unsigned char, RecordFormatCount> m_color_Byte					{  0,  0, 20, 28,  0, 28,  0, 30, 30,  0, 30 };	// Byte offset from point start to red color
 	const std::array<unsigned char, RecordFormatCount> m_NIR_Byte					{  0,  0,  0,  0,  0,  0,  0,  0, 36,  0, 36 };	// Byte offset to near infrared channel
 	const std::array<unsigned char, RecordFormatCount> m_wavePackets_Byte			{  0,  0,  0,  0, 28, 34,  0,  0,  0, 30, 38 };	// Byte offset to wave packets
 	
