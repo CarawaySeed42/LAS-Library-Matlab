@@ -457,7 +457,7 @@ maximums_int32 = ([lasHeader.max_x, lasHeader.max_y,lasHeader.max_z]-...
     [lasHeader.x_offset, lasHeader.y_offset, lasHeader.z_offset])./...
     [lasHeader.scale_factor_x, lasHeader.scale_factor_y,lasHeader.scale_factor_y];
 
-if any(abs(minimums_int32) > 2^31-1) || any(abs(maximums_int32) > 2^31-1)
+if any(abs(minimums_int32) > 2^31-1) | any(abs(maximums_int32) > 2^31-1) %#ok
     warning('Data can not be represented with current offsets! Offsets will be recalculated! Please check results!');
     las = updateOffsets(las);
     lasHeader.x_offset = las.header.x_offset;

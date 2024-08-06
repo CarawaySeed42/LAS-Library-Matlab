@@ -245,6 +245,8 @@ classdef PCloudFun
             %   another cloud beginning at index. No type checking is done! 
             %   Point count of lasInsert is derived from length(lasInsert.x). 
             %   All las fields need to have the same length or be empty!
+            %   VLRs are ignored. Extradata has to be compatible with
+            %   las.extradata
             %
             %   Arguments:
             %       las (struct)           : LAS Point Cloud structure
@@ -280,12 +282,31 @@ classdef PCloudFun
             
             % Extrabytes
             if ~isempty(lasToSet.extradata)
-                las.extradata(:, startIndex:startIndex+insertCount) = lasToSet.extradata;
+                las.extradata(:, indexArray) = lasToSet.extradata;
             end
             
             % Change count in header to new count of x
             las.header.number_of_point_records = length(las.x);
             
+        end
+        
+        function las = Append(las, lasAppend)
+            % las = Append(las, lasAppend)
+            %
+            %   Appends points and data of one cloud after the other.
+            %   No type checking is done! Point count of lasInsert
+            %   comes from length(lasAppend.x). All las fields need to have
+            %   the same length or be empty!
+            %
+            %   Arguments:
+            %       las (struct)         : LAS Point Cloud structure
+            %       lasAppend (struct)   : LAS Point Cloud structure to
+            %                              append to las
+            %
+            %   Returns:
+            %       las (struct)         : LAS Point Cloud structure
+            index = numel(las.x)+1;
+            las = PCloudFun.SetAtIndex(las, lasAppend, index);
         end
         
         function recordFormatInfo = RecordFormatInfo(recordFormat)
