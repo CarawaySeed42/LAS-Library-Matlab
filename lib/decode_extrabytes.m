@@ -231,8 +231,8 @@ for i = 1:length(extrabytes.ExtrabyteNames)
     byte_count = extrabytes.(name).descriptor.data_type.size;
     
     % If undocumented or unsupported extra bytes then do not decode
-    if extrabytes.(name).descriptor.options.raw == 0
-        extrabytes.(name).decoded_data = [];
+    if extrabytes.(name).descriptor.data_type.raw == 0
+        extrabytes.(name).decoded_data = lasStruct.extradata(byte_start:byte_start+byte_count-1, :);
         byte_start = byte_start + byte_count;
         continue;
     elseif byte_count == 0

@@ -6,7 +6,13 @@ function lasStruct = encode_extrabytes(lasStruct, extrabytes, VLRDescription, do
 %   the already existing if doAppend flag is true. Otherwise it will
 %   be overwritten. If more then one extrabytes VLR exists then only
 %   the first will be recognized and the other one will be deleted!
-%   Undocumented extrabytes will be encoded as uint64!
+%
+%   The byte count of undocumented extrabytes is provided in 
+%   (extrabyteName).descriptor.options.raw. This function will encode
+%   this amount of bytes of your input.
+%   E.g. Size of undocumented extrabyte is 5,
+%        Input (extrabyteName).decoded_data is of type uint64
+%        -> 5 bytes of this uint64 will be encoded
 %
 %
 %   Encoding und structuring is done according to specification:
@@ -162,22 +168,27 @@ for i = 1:length(extrabytes.ExtrabyteNames)
     curPropName = extrabytes.ExtrabyteNames{i};
     curProp     = extrabytes.(curPropName);
     
+    % If undocumented then do not change type
+    isUndocumented = curProp.descriptor.data_type.raw == 0;
+    
     % Apply scale and offset and turn data into target type
     scale       = curProp.descriptor.scale;
     offset      = curProp.descriptor.offset;
     
     % Apply scale and offset and turn data into target type
-    scale_bit   = bitand(bitshift(curProp.descriptor.options.raw, -3, 'uint8'), 1);
-    offset_bit  = bitand(bitshift(curProp.descriptor.options.raw, -4, 'uint8'), 1);
-    
-    if scale_bit && offset_bit
-        curProp.decoded_data = cast((curProp.decoded_data-offset)/scale, extrabytes_Data_Type{i});
-    elseif offset_bit
-        curProp.decoded_data = cast(curProp.decoded_data-offset, extrabytes_Data_Type{i});
-    elseif scale_bit
-        curProp.decoded_data = cast(curProp.decoded_data/scale, extrabytes_Data_Type{i});
-    else
-        curProp.decoded_data = cast(curProp.decoded_data, extrabytes_Data_Type{i});
+    if ~isUndocumented
+        scale_bit   = bitand(bitshift(curProp.descriptor.options.raw, -3, 'uint8'), 1);
+        offset_bit  = bitand(bitshift(curProp.descriptor.options.raw, -4, 'uint8'), 1);
+        
+        if scale_bit && offset_bit
+            curProp.decoded_data = cast((curProp.decoded_data-offset)/scale, extrabytes_Data_Type{i});
+        elseif offset_bit
+            curProp.decoded_data = cast(curProp.decoded_data-offset, extrabytes_Data_Type{i});
+        elseif scale_bit
+            curProp.decoded_data = cast(curProp.decoded_data/scale, extrabytes_Data_Type{i});
+        else
+            curProp.decoded_data = cast(curProp.decoded_data, extrabytes_Data_Type{i});
+        end
     end
     
     % Count of data elements and bytes per element
@@ -187,12 +198,12 @@ for i = 1:length(extrabytes.ExtrabyteNames)
     % Encode data type simply by getting byte representation and adding
     % to extradata, if a datatype if specified. Else trim the bytes
     % to the specified value in to options field
-    if curProp.descriptor.data_type.raw ~= 0
+    if ~isUndocumented
         lasStruct.extradata = [lasStruct.extradata; reshape(typecast(curProp.decoded_data, 'uint8')', byteCount, dataCount)];
     else
         byteCountInArray = curProp.descriptor.options.raw;
         extradataTmp = reshape(typecast(curProp.decoded_data, 'uint8')', byteCount, dataCount);
-        lasStruct.extradata = [lasStruct.extradata; extradataTmp(:,1:byteCountInArray)];
+        lasStruct.extradata = [lasStruct.extradata; extradataTmp(1:byteCountInArray, :)];
     end
     
 end

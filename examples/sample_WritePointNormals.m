@@ -70,10 +70,8 @@ end
 % unused.
 %
 % For uint16 compression:
-% Min and Max will not be set, because Min and Max are not neccessarily 
-% representable in this compressed state.
-% They would have to be written in their raw form according to specification
-% Problem: We can not express floating point values in this case
+% Min and Max will not be set, because the specification is unclear to me.
+% Do the min and max values have to be the decoded or encoded value?
 
 for i = 1:length(extrabytes.ExtrabyteNames)
     field_name = extrabytes.ExtrabyteNames{i};
@@ -87,7 +85,7 @@ for i = 1:length(extrabytes.ExtrabyteNames)
 end
 
 % If float set Min and Max bit to true
-% If uint16 then only set  Scale bit to true
+% If uint16 then only set Scale bit to true
 % Two ways to do this are shown here. Either all are set in one 
 % function call or specify each individual option separately
 if ~write_as_uint16
