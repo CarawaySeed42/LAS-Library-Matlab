@@ -47,7 +47,7 @@ classdef VariableNames
                              charIsUnderscore | charIsNumber);
             name_as_uint8(invalidChars) = 95;
             
-            % If name starts with number or underscore then add 'c' in front
+            % If name starts with number or underscore then add 'v' in front
             if charIsNumber(1) || charIsUnderscore(1)
                 name_as_uint8 = horzcat(118,name_as_uint8);
             end
