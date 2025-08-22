@@ -96,8 +96,14 @@ void LASdataReader::ReadPointData(std::ifstream& lasBin)
 
 	/* Check for Point Data Format and start reading*/
 	// Create reading buffer
-	std::unique_ptr<char[]>  uniqueBuffer(new char[bufferSize]);
+	std::unique_ptr<char[]>  uniqueBuffer(new (std::nothrow) char[bufferSize]);
 	char* buffer = uniqueBuffer.get();
+
+	if (!uniqueBuffer || nullptr == buffer)
+	{
+		mexErrMsgIdAndTxt("MEX:array:BadAlloc", "Could not allocate buffer of the reader!");
+		return;
+	}
 
 	// Set this external buffer to be used as internal buffer of ifstream to avoid copying from internal to external buffer
 	lasBin.rdbuf()->pubsetbuf(buffer, bufferSize);
