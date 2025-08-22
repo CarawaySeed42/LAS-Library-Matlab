@@ -5,40 +5,39 @@ function las = writeLASfile(las, filename, majorversion, minorversion, pointform
 %   Supports Versions LAS 1.1 - 1.4
 %   Supports Point Data Record Format 0 to 10
 %
-%   Writes lasdata style struct to a Las-File. This function tries to
+%   Writes lasdata style struct to a LAS-file. This function tries to
 %   compensate for errors in the header and data. Point Count is determined
 %   by the number of elements in field las.x. If a data field is bigger
 %   than point count, an exception will be thrown. If field has less
 %   elements then the array will be padded with zeros.
-%   Header coordinate offsets and scale factor have to be provided 
-%   by the user.
+%   Header coordinate offsets and scale factor have to be set by the caller
+%   beforehand but will be recalculated if the LAS-file would
+%   otherwise become invalid.
 %   Retains compatibility with lasdata matlab class by
 %   Teemu Kumpumäki (2016)
 %
 %   Input:
-%       las [struct]        : Struct containing point cloud data
-%       filename [string]   : Full Path to output file
-%       majorversion [uint] : Optional Major Version of output LAS File
-%       minorversion [uint] : Optional Minor Verison of output LAS File
-%       pointformat [uint]  : Optional Point Data Record Format of output LAS File
-%       optional [struct]   : Optional input arguments
+%       las (struct)        : Struct containing point cloud data
+%       filename (string)   : Full Path to output file
+%       majorversion (uint) : Optional Major Version of output LAS File
+%       minorversion (uint) : Optional Minor Verison of output LAS File
+%       pointformat (uint)  : Optional Point Data Record Format of output LAS File
+%       optional (struct)   : Optional input arguments
 %
-%       optional options:
-%           keepCreationDate : If true then the file creation info from
-%                              header is kept, if False then current date
-%                              is used
+%       optional struct fields:
+%          keepCreationDate : If true then the file creation info from
+%                             header is kept, if false then current date is used
 %
 %   Returns:
-%       las [struct]        : Struct containing the written cloud data
+%       las (struct)        : Struct containing the written cloud data
 %
 
 LASContainsColor       = PCloudFun.LASContainsColor;
 LASContainsTime        = PCloudFun.LASContainsTime;
 LASContainsNIR         = PCloudFun.LASContainsNIR;
 LASContainsWavePackets = PCloudFun.LASContainsWavePackets;
-inputIsLegacyLasdata = 0;
-
-keepCreationDate = 0;
+inputIsLegacyLasdata = false;
+keepCreationDate     = false;
 
 %% Input and header checks
 % Safe source PDRF for the transformation of bit fields later
@@ -77,7 +76,7 @@ if (isfield(las.header, 'file_creation_daobj'))
     if (isfield(las.header.file_creation_daobj, 'y') && ~isfield(las.header, 'file_creation_day_of_year'))
         % Copy day of year from lasdata to new struct layout
         las.header.file_creation_day_of_year = las.header.file_creation_dalas.y;
-        inputIsLegacyLasdata = 1;
+        inputIsLegacyLasdata = true;
     end
 end
 
@@ -289,7 +288,8 @@ writeLASfile_cpp(las, char(filename));
 
 
 end
-    
+
+%% --- Subfunction Block ---
 function dateStruct = GetCreationDate()
 % dateStruct = GetCreationDate()
 %   Returns day of year and the year itself
@@ -319,12 +319,11 @@ function lasHeader = PrepareHeader(las, keepCreationDate)
 %   Returns:
 %       lasHeader [struct]      : A consistent LAS Header
 
-record_lengths  = [20, 28, 26, 34, 57, 63, 30, 36, 38, 59, 67];
-supportedPDRF        = 0:10;
-supportedVerMinor    = [1, 2, 3, 4];
-supportedVerMajor    = 1;
-
-lasHeader       = las.header;
+record_lengths    = [20, 28, 26, 34, 57, 63, 30, 36, 38, 59, 67];
+supportedPDRF     = 0:10;
+supportedVerMinor = [1, 2, 3, 4];
+supportedVerMajor = 1;
+lasHeader         = las.header;
 
 if length(lasHeader.source_id) ~= 1
     lasHeader.source_id = 0;
@@ -433,10 +432,10 @@ lasHeader.max_z = max(las.z);
 lasHeader.min_z = min(las.z);
 
 % Coordinate Offsets
-% Should be provided by the user. Just check if the offsets are there and
+% Should be provided by the user. Check if the offsets are there and
 % if they are enough to represent the coordinates as int32 in LAS file
 if ~isfield(lasHeader,'x_offset') || ~isfield(lasHeader,'y_offset') || ~isfield(lasHeader,'z_offset')
-    error('Coordinate Offsets are incomplete!');
+    error('Coordinate offsets in las.header are incomplete!');
 end
 
 if length(lasHeader.x_offset) ~= 1
@@ -449,20 +448,21 @@ if length(lasHeader.z_offset) ~= 1
     lasHeader.z_offset = lasHeader.z_offset(1);
 end
 
-minimums_int32 = ([lasHeader.min_x, lasHeader.min_y,lasHeader.min_z]-...
-    [lasHeader.x_offset, lasHeader.y_offset, lasHeader.z_offset])./...
-    [lasHeader.scale_factor_x, lasHeader.scale_factor_y,lasHeader.scale_factor_y];
-    
-maximums_int32 = ([lasHeader.max_x, lasHeader.max_y,lasHeader.max_z]-...
-    [lasHeader.x_offset, lasHeader.y_offset, lasHeader.z_offset])./...
-    [lasHeader.scale_factor_x, lasHeader.scale_factor_y,lasHeader.scale_factor_y];
-
-if any(abs(minimums_int32) > 2^31-1) | any(abs(maximums_int32) > 2^31-1) %#ok
-    warning('Data can not be represented with current offsets! Offsets will be recalculated! Please check results!');
+if ~BoundingBoxesValidInt32(lasHeader)
+    % If xyz can not be represented as int32 then recalculate offset. First
+    % round to nearest integer to mean, the double precision and if
+    % everything fails, then update the scale factors to fit the data
+    las.header = lasHeader;
     las = updateOffsets(las);
-    lasHeader.x_offset = las.header.x_offset;
-    lasHeader.y_offset = las.header.y_offset;
-    lasHeader.z_offset = las.header.z_offset;
+    
+    if ~BoundingBoxesValidInt32(las.header)
+        las = updateOffsets(las, 0);
+        if ~BoundingBoxesValidInt32(las.header)
+            las = optimizeScaleFactors(las);
+        end
+    end
+    
+    lasHeader = las.header;
 end
     
 % Offset to point data is header size plus Variable Length Records Length
@@ -684,4 +684,28 @@ function lasField = FixDataType(lasField, datatype)
 if ~isa(lasField, datatype)
     lasField = cast(lasField, datatype);
 end
+end
+
+function isValid = BoundingBoxesValidInt32(lasHeader)
+% isValid = BoundingBoxesValidInt32(lasHeader)
+%
+% Checks if the xyz bounding boxes in las header are representable as Int32
+% values in regards to offsets and scale factors.
+% Coordinates are saved as Int32 in LAS. They will be shifted and scaled to
+% be turned into Int32 values. This can lead to over- or underflow.
+% Make sure the bounding boxes are calculated according to point data!
+int32_min = int64(-2^31);
+int32_max = int64(2^31-1);
+
+minimums_int32 = int64(([lasHeader.min_x, lasHeader.min_y,lasHeader.min_z]-...
+    [lasHeader.x_offset, lasHeader.y_offset, lasHeader.z_offset])./...
+    [lasHeader.scale_factor_x, lasHeader.scale_factor_y,lasHeader.scale_factor_z]);
+    
+maximums_int32 = int64(([lasHeader.max_x, lasHeader.max_y,lasHeader.max_z]-...
+    [lasHeader.x_offset, lasHeader.y_offset, lasHeader.z_offset])./...
+    [lasHeader.scale_factor_x, lasHeader.scale_factor_y,lasHeader.scale_factor_z]);
+
+isInvalid = any(minimums_int32 < int32_min, 'all') | any(maximums_int32 > int32_max, 'all');
+isValid   = ~isInvalid;
+
 end
